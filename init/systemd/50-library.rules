@@ -1,0 +1,1 @@
+KERNEL=="ttyACM[0-9]*", MODE="0444", SYMLINK+="barcodescanner", ENV{SYSTEMD_WANTS}="authenticator.service"

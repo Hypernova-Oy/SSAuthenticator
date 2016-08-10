@@ -1,0 +1,7 @@
+MANIFEST
+lib/Authenticator.pm
+lib/GPIO.pm
+t/Permission.t
+Build.PL
+README.md
+LICENSE
