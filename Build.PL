@@ -17,6 +17,9 @@ my $build = Module::Build->new
 	 'HTTP::Request::Common' => '6',
 	 'JSON' => '2',
 	 'Sys::SigAction' => '0.22',
+	 'DateTime' => '1',
+	 'DateTime::Format::HTTP' => '0.4',
+	 'Digest::SHA' => '5',
      },
 
     );

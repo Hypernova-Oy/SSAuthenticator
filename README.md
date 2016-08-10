@@ -39,4 +39,5 @@ Raspian:
 
 perl libtest-simple-perl libtest-mockmodule-perl \
 libmodern-perl-perl libconfig-simple-perl libdbm-deep-perl \
-libwww-perl libjson-perl libsys-sigaction-perl
+libwww-perl libjson-perl libsys-sigaction-perl libdatetime-perl \
+libdatetime-format-http-perl libdigest-sha-perl

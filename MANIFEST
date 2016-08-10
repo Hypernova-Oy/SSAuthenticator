@@ -1,7 +1,9 @@
 MANIFEST
 lib/Authenticator.pm
 lib/GPIO.pm
+lib/API.pm
 t/Permission.t
+t/API.t
 Build.PL
 README.md
 LICENSE
