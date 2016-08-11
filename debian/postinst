@@ -1,0 +1,30 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    configure)
+
+	# Add system daemon user
+	addgroup --system authenticator
+	adduser --system --no-create-home \
+		--disabled-password --ingroup authenticator authenticator
+	adduser authenticator gpio
+
+	# Add local cache file
+	mkdir /var/cache/authenticator
+	chown authenticator:authenticator /var/cache/authenticator
+	touch /var/cache/authenticator/patron.db
+	chown authenticator:authenticator /var/cache/authenticator/patron.db
+	;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+	;;
+    
+    *)
+	echo "postinst called with unknown argument \`$1'" >&2
+	exit 1
+	;;
+esac
+
+exit 0
