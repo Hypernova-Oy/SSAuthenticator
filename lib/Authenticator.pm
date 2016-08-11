@@ -44,6 +44,7 @@ use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
 
 use GPIO;
+use API;
 
 use constant {
     GREEN => 18,
@@ -74,7 +75,7 @@ sub canUseLibrary {
     my $authorized = 0;
     
     timeout_call(
-	    getTimeout(),
+	getTimeout(),
 	sub {$authorized = isAuthorizedApi($cardNumber)});
 
     # Check if we got response from REST API
@@ -90,10 +91,10 @@ sub canUseLibrary {
 sub isAuthorizedApi {
     my ($cardNumber) = @_;
 
-    my %responseValues = getApiResponseValues($cardNumber);
+    my $responseValues = getApiResponseValues($cardNumber);
 
-    if (exists $responseValues{permission}) {
-	return $responseValues{permission} eq 'true' ? 1 : 0;
+    if (exists $$responseValues{permission}) {
+	return $$responseValues{permission} eq 'true' ? 1 : 0;
     } else {
 	return undef;
     }
@@ -103,10 +104,21 @@ sub getApiResponseValues {
     my ($cardNumber) = @_;
 
     my $response = getApiResponse($cardNumber);
-    my $responseContent = $response->decoded_content;
 
+    if ($response->is_success) {
+	decodeContent($response);
+    } else {
+	print STDERR $response->status_line, "\n";
+	return ();
+    }
+}
+
+sub decodeContent {
+    my ($response) = @_;
+    
+    my $responseContent = $response->decoded_content;
     if ($responseContent) {
-	return decode_json $response->decoded_content;
+	return decode_json $responseContent;
     } else {
 	return ();
     }
@@ -115,11 +127,28 @@ sub getApiResponseValues {
 sub getApiResponse {
     my ($cardNumber) = @_;
 
-    # TODO: when API is ready include $cardNumber to URL
-    my $requestUrl = $CONFIG->param('ApiBaseUrl') . "/borrowers/status";
+    my $requestUrl = $CONFIG->param('ApiBaseUrl') . "/borrowers/ssstatus";
+
     my $ua = LWP::UserAgent->new;
-    my $response = $ua->request(GET $requestUrl);
-    
+    my $userId = $CONFIG->param("ApiUserName");
+    my $apiKey = $CONFIG->param("ApiKey");
+    my $authHeaders = API::prepareAuthenticationHeaders($userId,
+							undef,
+							"GET",
+							$apiKey);
+
+    my $date = $authHeaders->{'X-Koha-Date'};
+    my $authorization = $authHeaders->{'Authorization'};
+
+    my $request = HTTP::Request->new(GET => $requestUrl);
+    $request->header('X-Koha-Date' => $date);
+    $request->header('Authorization' => $authorization);
+    $request->header('Content-Type' => 'application/x-www-form-urlencoded');
+    $request->header('Content-Length' => length('cardnumber='.$cardNumber));
+    $request->content('cardnumber='.$cardNumber);
+
+    my $response = $ua->request($request);
+
     return $response;
 }
 
