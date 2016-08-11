@@ -4,7 +4,7 @@ Description=Library access control module
 [Service]
 Type=idle
 User=pi
-WorkingDirectory=/home/pi/authenticator/lib
+WorkingDirectory=/usr/share/perl5
 ExecStart=/usr/bin/perl Authenticator.pm
 
 RestartSec=5s
