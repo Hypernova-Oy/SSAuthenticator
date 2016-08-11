@@ -120,5 +120,5 @@ sub getApiResponseValuesMock {
 	$responseContent{permission} = "false";
     }
 
-    return %responseContent;
+    return \%responseContent;
 }

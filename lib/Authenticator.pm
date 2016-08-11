@@ -93,10 +93,10 @@ sub isAuthorizedApi {
 
     my $responseValues = getApiResponseValues($cardNumber);
 
-    if (exists $$responseValues{permission}) {
-	return $$responseValues{permission} eq 'true' ? 1 : 0;
+    if (exists $responseValues->{permission}) {
+    	return $responseValues->{permission} eq 'true' ? 1 : 0;
     } else {
-	return undef;
+    	return undef;
     }
 }
 
@@ -106,10 +106,13 @@ sub getApiResponseValues {
     my $response = getApiResponse($cardNumber);
 
     if ($response->is_success) {
-	decodeContent($response);
+	return decodeContent($response);
     } else {
-	print STDERR $response->status_line, "\n";
-	return ();
+	if ($response->code eq '404') {
+	    return {permission => 'false'};
+	} else {
+	    return ();
+	}
     }
 }
 
@@ -117,6 +120,7 @@ sub decodeContent {
     my ($response) = @_;
     
     my $responseContent = $response->decoded_content;
+
     if ($responseContent) {
 	return decode_json $responseContent;
     } else {
@@ -265,7 +269,6 @@ sub controlAccess {
     }
 }
 
-
 sub main {
     if (!isConfigValid()) {
 	exit 1;
@@ -277,7 +280,6 @@ sub main {
     open(DEVICE, "<", $PORT);
     while ($_ = <DEVICE>) {
 	my $cardNumber = $_;
-	#my $cardNumber = substr($_, 0, length($_) -1);
 	controlAccess($cardNumber);
 
 	# Empty buffer
