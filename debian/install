@@ -1,1 +1,1 @@
-udev/50-library.rules /lib/udev/rules.d
+udev/50-library.rules lib/udev/rules.d
