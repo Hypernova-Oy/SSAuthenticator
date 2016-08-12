@@ -30,6 +30,13 @@ $ sudo perl hipi-install
 $ wget https://github.com/KohaSuomi/SSAuthenticator/releases/download/v0.10/authenticator_0.10-1_all.deb
 
 $ sudo dpkg -i authenticator_<version>_all.deb
+
+# Edit configure file (mandatory)
+# Instructions on how to do that are provided in that file
+$ sudo $EDITOR /etc/authenticator/daemon.conf
+
+# Finally reboot in order for the barcodescanner udev rules to take place
+$ sudo reboot
 ```
 ## License
 
