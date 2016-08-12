@@ -26,7 +26,10 @@ libdatetime-format-http-perl libdigest-sha-perl
 $ wget http://raspberry.znix.com/hipifiles/hipi-install
 $ sudo perl hipi-install
 
-$ sudo dpkg -i authenticator_0.10.deb
+# Download debian package from https://github.com/KohaSuomi/SSAuthenticator/releases, for example:
+$ wget https://github.com/KohaSuomi/SSAuthenticator/releases/download/v0.10/authenticator_0.10-1_all.deb
+
+$ sudo dpkg -i authenticator_<version>_all.deb
 ```
 ## License
 
