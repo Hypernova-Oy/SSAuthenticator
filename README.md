@@ -17,17 +17,17 @@ scanning the QR code provided in the manual for interface 'USB-COM'.
 character ('\n').
 
 Raspian:
-
-sudo apt-get install perl libtest-simple-perl libtest-mockmodule-perl \
+```
+$ sudo apt-get install perl libtest-simple-perl libtest-mockmodule-perl \
 libmodern-perl-perl libconfig-simple-perl libdbm-deep-perl \
 libwww-perl libjson-perl libsys-sigaction-perl libdatetime-perl \
 libdatetime-format-http-perl libdigest-sha-perl
 
-wget http://raspberry.znix.com/hipifiles/hipi-install
-sudo perl hipi-install
+$ wget http://raspberry.znix.com/hipifiles/hipi-install
+$ sudo perl hipi-install
 
-sudo dpkg -i authenticator_0.10.deb
-
+$ sudo dpkg -i authenticator_0.10.deb
+```
 === License ===
 
 Authenticator is free software; you can redistribute it and/or modify
