@@ -29,8 +29,39 @@ my %users = (morko => {access => 'false', barcode => '1A00MÖRKÖ'},
 	     niisku => {access => 'true', barcode => '1A00NIISKU'}
     );
 
+
+sub createConfig {
+    open(my $fh, ">", "daemon.conf");
+    print $fh "ApiBaseUrl http://localhost-api/api/v1\n";
+    print $fh "LibraryName MyTestLibrary\n";
+    print $fh "ConnectionTimeout 3\n";
+    print $fh "ApiKey testAPikey\n";
+    print $fh "ApiUserName testUser\n";
+}
+
+sub createCacheDB {
+    open(my $fh, ">", "patron.db");
+    print $fh "";
+}
+
+sub rmCacheDB {
+    unlink "patron.db";
+}
+
+sub rmConfig {
+    unlink "daemon.conf";
+}
+
 subtest "Can use library", \&testLibraryUsagePermission;
 sub testLibraryUsagePermission {
+    createCacheDB();
+    createConfig();
+
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getConfig', \&getConfig);
+
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getDB', \&getDB);
 
     my $module = Test::MockModule->new('Authenticator');
     $module->mock('getApiResponseValues', \&getApiResponseValuesMock);
@@ -40,11 +71,21 @@ sub testLibraryUsagePermission {
 	is(Authenticator::canUseLibrary($users{$user}{barcode}), $access,
 	   "$user permission to use library");
     }
-    
+
+    rmConfig();
+    rmCacheDB();
 }
 
 subtest "Authorized to access the build now", \&testApiAccess;
 sub testApiAccess {
+    createCacheDB();
+    createConfig();
+
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getConfig', \&getConfig);
+
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getDB', \&getDB);
 
     my $module = Test::MockModule->new('Authenticator');
     $module->mock('getApiResponseValues', \&getApiResponseValuesMock);
@@ -54,13 +95,23 @@ sub testApiAccess {
 	is(Authenticator::isAuthorized($users{$user}{barcode}), $access,
 	   "$user can enter the building");
     }
+
+    rmConfig();
+    rmCacheDB();
 }
 
 
 subtest "Cache access authorization", \&testCacheAccess;
 sub testCacheAccess {
-    # Clean before testing
-    Authenticator::getDB()->delete("1A00TEST");
+    createCacheDB();
+    createConfig();
+
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getConfig', \&getConfig);
+
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getDB', \&getDB);
+    
     Authenticator::updateCache("1A00TEST", 1);
 
     ok(Authenticator::isAuthorizedCache("1A00TEST"),
@@ -72,14 +123,23 @@ sub testCacheAccess {
 
     ok(!Authenticator::isAuthorizedCache("1A00TEST"),
        "Not authorized from cache");
+
+    rmCacheDB();
+    rmConfig();
 }
 
 # Test cache primitive operations.
 subtest "Cache updating", \&testCacheUpdating;
 sub testCacheUpdating {
-    # Clean before testing
-    Authenticator::getDB()->delete("1A00TEST");
+    createConfig();
+    createCacheDB(); 
+
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getConfig', \&getConfig);
     
+    my $module = Test::MockModule->new('Authenticator');
+    $module->mock('getDB', \&getDB);
+       
     my $module = Test::MockModule->new('Authenticator');
     $module->mock('isAuthorized', sub {
 	return 1;
@@ -100,7 +160,25 @@ sub testCacheUpdating {
 
     ok(!$$entry{access},
        "Updated cache value to denied");
+
+    rmConfig();
+    rmCacheDB();
 }
+
+sub getDB {
+    my $CARDNUMBER_FILE = "patron.db";
+    my $CARDNUMBER_DB = DBM::Deep->new($CARDNUMBER_FILE);
+    return $CARDNUMBER_DB;
+}
+
+sub getConfig {
+    my $configFile = "daemon.conf";
+    my $config = new Config::Simple($configFile)
+	|| die Config::Simple->error(), ".\n",
+	"Please check the syntax in daemon.conf.";
+    return $config;
+}
+
 
 sub getApiResponseValuesMock {
     my ($cardNumber) = @_;
