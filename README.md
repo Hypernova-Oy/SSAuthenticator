@@ -1,9 +1,9 @@
-=== Authenticator ===
+# Authenticator
 
 Authenticator is a system daemon that controls access to a library
 using Koha instance's REST API and its local cache as fallback.
 
-=== Installation ===
+## Installation
 
 Prerequisites:
 
@@ -28,7 +28,7 @@ $ sudo perl hipi-install
 
 $ sudo dpkg -i authenticator_0.10.deb
 ```
-=== License ===
+## License
 
 Authenticator is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
