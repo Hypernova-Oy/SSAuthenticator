@@ -5,7 +5,7 @@ set -e
 case "$1" in
     purge)
 	if [ -x "$(command -v deluser)" ]; then
-	    deluser --quiet --system authenticator > /dev/null || true
+	    deluser --quiet --remove-home --system authenticator > /dev/null || true
 	else
 	    echo >&2 "not removing authenticator system account because deluser command was not found"
 	fi

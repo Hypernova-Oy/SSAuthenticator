@@ -7,14 +7,19 @@ case "$1" in
 
 	# Add system daemon user
 	addgroup --system authenticator
-	adduser --system --no-create-home \
+	adduser --system --home /var/lib/authenticator \
 		--disabled-password --ingroup authenticator authenticator
 	adduser authenticator gpio
 
 	# Add local cache file
-	mkdir /var/cache/authenticator
+	if [ ! -d "/var/cache/authenticator" ]; then
+	    mkdir /var/cache/authenticator
+	fi
 	chown authenticator:authenticator /var/cache/authenticator
-	touch /var/cache/authenticator/patron.db
+
+	if [ ! -f /var/cache/authenticator/patron.db ]; then
+	   touch /var/cache/authenticator/patron.db
+	fi
 	chown authenticator:authenticator /var/cache/authenticator/patron.db
 	;;
 
