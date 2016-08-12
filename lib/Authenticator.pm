@@ -54,14 +54,18 @@ use constant {
     BUZZER => 24,
 };
 
-my $CARDNUMBER_FILE = "/var/cache/authenticator/patron.db";
-my $CARDNUMBER_DB = DBM::Deep->new($CARDNUMBER_FILE);
-my $CONFIG_FILE = "/etc/authenticator/daemon.conf";
-my $CONFIG = new Config::Simple($CONFIG_FILE)
-    || die Config::Simple->error();
-
 sub getDB {
+    my $CARDNUMBER_FILE = "/var/cache/authenticator/patron.db";
+    my $CARDNUMBER_DB = DBM::Deep->new($CARDNUMBER_FILE);
     return $CARDNUMBER_DB;
+}
+
+sub getConfig {
+    my $configFile = "/etc/authenticator/daemon.conf";
+    my $config = new Config::Simple($configFile)
+	|| die Config::Simple->error(), ".\n",
+	"Please check the syntax in /etc/authenticator/daemon.conf.";
+    return $config;
 }
 
 sub isAuthorized {
@@ -131,11 +135,11 @@ sub decodeContent {
 sub getApiResponse {
     my ($cardNumber) = @_;
 
-    my $requestUrl = $CONFIG->param('ApiBaseUrl') . "/borrowers/ssstatus";
+    my $requestUrl = getConfig()->param('ApiBaseUrl') . "/borrowers/ssstatus";
 
     my $ua = LWP::UserAgent->new;
-    my $userId = $CONFIG->param("ApiUserName");
-    my $apiKey = $CONFIG->param("ApiKey");
+    my $userId = getConfig()->param("ApiUserName");
+    my $apiKey = getConfig()->param("ApiKey");
     my $authHeaders = API::prepareAuthenticationHeaders($userId,
 							undef,
 							"GET",
@@ -157,7 +161,7 @@ sub getApiResponse {
 }
 
 sub isLibraryOpen {
-    my $libraryName = $CONFIG->param('LibraryName');
+    my $libraryName = getConfig()->param('LibraryName');
     # TODO:
     # Request data from API and fallback to cache if not possible
     return 1;
@@ -165,8 +169,8 @@ sub isLibraryOpen {
 
 sub isAuthorizedCache {
     my ($cardNumber) = @_;
-    if ($CARDNUMBER_DB->exists($cardNumber)) {
-	my $patronInfo = $CARDNUMBER_DB->get($cardNumber);
+    if (getDB()->exists($cardNumber)) {
+	my $patronInfo = getDB()->get($cardNumber);
 	return $$patronInfo{access};
     } else {
 	return 0;
@@ -214,25 +218,25 @@ sub denyAccess {
 sub getTimeout() {
     my $defaultTimeout = 3;
 
-    if ($CONFIG->param('ConnectionTimeout')) {
-	return $CONFIG->param('ConnectionTimeout');
+    if (getConfig()->param('ConnectionTimeout')) {
+	return getConfig()->param('ConnectionTimeout');
     } else {
 	return $defaultTimeout;
     }
 }
 
 sub isConfigValid() {
-    if (!$CONFIG->param("ApiBaseUrl")) {
+    if (!getConfig()->param("ApiBaseUrl")) {
 	print "ApiUrl not defined in daemon.conf";
 	return 0;
     }
 
-    if (!$CONFIG->param("LibraryName")) {
+    if (!getConfig()->param("LibraryName")) {
 	say "Libary name not defined in daemon.conf";
 	return 0;
     }
 
-    my $timeout = $CONFIG->param("ConnectionTimeout");
+    my $timeout = getConfig()->param("ConnectionTimeout");
     if (!$timeout) {
 	return 1;
     } elsif (!($timeout =~ /\d+/)) {
@@ -245,13 +249,13 @@ sub isConfigValid() {
 
 sub updateCache {
     my ($cardNumber, $access) = @_;
-    $CARDNUMBER_DB->put($cardNumber, {time => "2015",
+    getDB()->put($cardNumber, {time => "2015",
 				      access => $access});
 }
 
 sub removeFromCache {
     my ($cardNumber) = @_;
-    $CARDNUMBER_DB->delete($cardNumber);
+    getDB()->delete($cardNumber);
 }
 
 sub freeSpaceInCache {
