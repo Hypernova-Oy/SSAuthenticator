@@ -114,9 +114,9 @@ sub getApiResponseValues {
     } else {
 	if ($response->code eq '404') {
 	    return {permission => 'false'};
-	} else {
-	    return ();
 	}
+
+	return ();
     }
 }
 
