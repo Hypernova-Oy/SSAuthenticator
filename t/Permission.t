@@ -32,16 +32,18 @@ my %users = (morko => {access => 'false', barcode => '1A00MÖRKÖ'},
 
 sub createConfig {
     open(my $fh, ">", "daemon.conf");
-    print $fh "ApiBaseUrl http://localhost-api/api/v1\n";
-    print $fh "LibraryName MyTestLibrary\n";
-    print $fh "ConnectionTimeout 3\n";
-    print $fh "ApiKey testAPikey\n";
-    print $fh "ApiUserName testUser\n";
+    say $fh "ApiBaseUrl http://localhost-api/api/v1";
+    say $fh "LibraryName MyTestLibrary";
+    say $fh "ConnectionTimeout 3";
+    say $fh "ApiKey testAPikey";
+    say $fh "ApiUserName testUser";
+    close $fh;
 }
 
 sub createCacheDB {
     open(my $fh, ">", "patron.db");
     print $fh "";
+    close $fh;
 }
 
 sub rmCacheDB {
