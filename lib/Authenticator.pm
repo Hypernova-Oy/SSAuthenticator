@@ -226,25 +226,25 @@ sub getTimeout() {
 }
 
 sub isConfigValid() {
-    if (!getConfig()->param("ApiBaseUrl")) {
-	print "ApiUrl not defined in daemon.conf";
-	return 0;
-    }
+    my $returnValue = 1;
 
-    if (!getConfig()->param("LibraryName")) {
-	say "Libary name not defined in daemon.conf";
-	return 0;
+    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey');
+    foreach my $param (@params) {
+	if (!getConfig()->param($param)) {
+	    say "$param not defined in daemon.conf";
+	    $returnValue = 0;
+	}
     }
 
     my $timeout = getConfig()->param("ConnectionTimeout");
     if (!$timeout) {
-	return 1;
+	return $returnValue;
     } elsif (!($timeout =~ /\d+/)) {
-	say "Timeout value is invalid. Valid value is a integer.";
-	return 0;
+	say "ConnectionTimeout value is invalid. Valid value is an integer.";
+	$returnValue = 0;
     }
 
-    return 1;
+    return $returnValue;
 }
 
 sub updateCache {
