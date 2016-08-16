@@ -1,5 +1,5 @@
 # Authenticator
-
+1;4205;0c1;4205;0c
 Authenticator is a system daemon that controls access to a library
 using Koha instance's REST API and its local cache as fallback.
 
@@ -18,11 +18,6 @@ character ('\n').
 
 Raspian:
 ```
-$ sudo apt-get install perl libtest-simple-perl libtest-mockmodule-perl \
-libmodern-perl-perl libconfig-simple-perl libdbm-deep-perl \
-libwww-perl libjson-perl libsys-sigaction-perl libdatetime-perl \
-libdatetime-format-http-perl libdigest-sha-perl
-
 $ wget http://raspberry.znix.com/hipifiles/hipi-install
 $ sudo perl hipi-install
 
@@ -30,6 +25,7 @@ $ sudo perl hipi-install
 $ wget https://github.com/KohaSuomi/SSAuthenticator/releases/download/v0.10/authenticator_0.10-1_all.deb
 
 $ sudo dpkg -i authenticator_<version>_all.deb
+$ sudo apt-get install -f
 
 # Edit configure file (mandatory)
 # Instructions on how to do that are provided in that file
@@ -38,6 +34,19 @@ $ sudo $EDITOR /etc/authenticator/daemon.conf
 # Finally reboot in order for the barcodescanner udev rules to take place
 $ sudo reboot
 ```
+
+## Development
+
+If you want to run unit tests with ```Build test``` you need to install
+the following dependencies:
+
+```
+$ sudo apt-get install perl libtest-simple-perl libtest-mockmodule-perl \
+libmodern-perl-perl libconfig-simple-perl libdbm-deep-perl \
+libwww-perl libjson-perl libsys-sigaction-perl libdatetime-perl \
+libdatetime-format-http-perl libdigest-sha-perl
+```
+
 ## License
 
 Authenticator is free software; you can redistribute it and/or modify
