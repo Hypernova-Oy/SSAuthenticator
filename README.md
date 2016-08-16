@@ -1,5 +1,5 @@
 # Authenticator
-1;4205;0c1;4205;0c
+
 Authenticator is a system daemon that controls access to a library
 using Koha instance's REST API and its local cache as fallback.
 
