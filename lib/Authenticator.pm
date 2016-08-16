@@ -242,7 +242,6 @@ sub isConfigValid() {
 
     my $timeout = getConfig()->param("ConnectionTimeout");
     if (!$timeout) {
-	say "ConnectionTimeout not defined in daemon.conf";
 	return $returnValue;
     } elsif (!($timeout =~ /\d+/)) {
 	say "ConnectionTimeout value is invalid. Valid value is an integer.";
