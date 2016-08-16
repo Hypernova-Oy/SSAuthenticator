@@ -253,17 +253,13 @@ sub isConfigValid() {
 
 sub updateCache {
     my ($cardNumber, $access) = @_;
-    getDB()->put($cardNumber, {time => "2015",
+    getDB()->put($cardNumber, {time => localtime,
 				      access => $access});
 }
 
 sub removeFromCache {
     my ($cardNumber) = @_;
     getDB()->delete($cardNumber);
-}
-
-sub freeSpaceInCache {
-    
 }
 
 sub controlAccess {
