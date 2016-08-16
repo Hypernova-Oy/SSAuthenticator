@@ -42,6 +42,7 @@ use HTTP::Request::Common;
 use JSON;
 use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
+use Sys::Syslog qw(:standard :macros);
 
 use GPIO;
 use API;
@@ -114,6 +115,9 @@ sub getApiResponseValues {
     } else {
 	if ($response->code eq '404') {
 	    return {permission => 'false'};
+	} else {
+	    syslog(LOG_ERR, "REST API is not working as expected. ".
+		"Maybe it is misconfigured?");
 	}
 
 	return ();
@@ -238,6 +242,7 @@ sub isConfigValid() {
 
     my $timeout = getConfig()->param("ConnectionTimeout");
     if (!$timeout) {
+	say "no timeout here";
 	return $returnValue;
     } elsif (!($timeout =~ /\d+/)) {
 	say "ConnectionTimeout value is invalid. Valid value is an integer.";
