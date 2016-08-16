@@ -285,7 +285,8 @@ sub main {
 
     my $PORT = "/dev/barcodescanner";
 
-    #local $/ = "\r";
+    local $/ = getConfig()->param('ScannerReadingSeparator') || "\n";
+
     open(DEVICE, "<", $PORT);
     while ($_ = <DEVICE>) {
 	my $cardNumber = $_;
