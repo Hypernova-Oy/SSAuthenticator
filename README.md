@@ -37,15 +37,41 @@ $ sudo reboot
 
 ## Development
 
-If you want to run unit tests with ```Build test``` you need to install
-the following dependencies:
+For development and packaging you want the following packages:
 
+Rasbian:
 ```
 $ sudo apt-get install perl libtest-simple-perl libtest-mockmodule-perl \
 libmodern-perl-perl libconfig-simple-perl libdbm-deep-perl \
 libwww-perl libjson-perl libsys-sigaction-perl libdatetime-perl \
 libdatetime-format-http-perl libdigest-sha-perl
 ```
+
+### Release process
+
+```
+$ git clone https://github.com/KohaSuomi/SSAuthenticator --depth=1
+
+# Replace X.XX with the release version and remember to bump up the
+# number also in lib/Authenticator.pm
+$ mv SSAuthenticator authenticator-X.XX
+
+$ mkdir Packaging && cd Packaging
+
+$ tar -cvzf authenticator_X.XX.orig.tar.gz ../authenticator-X.XX
+
+$ tar -xzmf authenticator_X.XX.orig.tar.gz
+
+$ cd authenticator-X.XX
+
+# Create .deb package, will appear in one directory above current.
+# for signing the package, leave -uc -us out.
+$ debuild -uc -us
+```
+
+After that you can create in Github a new release and attach the
+generated binary to it.
+
 
 ## License
 
