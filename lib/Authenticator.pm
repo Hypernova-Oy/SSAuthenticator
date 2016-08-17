@@ -43,6 +43,7 @@ use JSON;
 use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
 use Sys::Syslog qw(:standard :macros);
+use Systemd::Daemon qw{ -soft notify };
 
 use GPIO;
 use API;
@@ -281,6 +282,7 @@ sub main {
     local $/ = getConfig()->param('ScannerReadingSeparator') || "\n";
 
     while (1) {
+	notify(WATCHDOG => 1);
 	open(my $device, "<", "/dev/barcodescanner");
 	my $cardNumber = "";
 	if (timeout_call(
