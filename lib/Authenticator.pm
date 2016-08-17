@@ -278,21 +278,25 @@ sub main {
 	exit 1;
     }
 
-    my $PORT = "/dev/barcodescanner";
-
     local $/ = getConfig()->param('ScannerReadingSeparator') || "\n";
 
-    open(DEVICE, "<", $PORT);
-    while ($_ = <DEVICE>) {
-	my $cardNumber = $_;
+    while (1) {
+	open(my $device, "<", "/dev/barcodescanner");
+	my $cardNumber = "";
+	if (timeout_call(
+		0.1,
+		sub {$cardNumber = <$device>})) {
+	    next;
+	}
+	chomp($cardNumber);
+
 	controlAccess($cardNumber);
 
-	# Empty buffer
-	close DEVICE;
-	open(DEVICE, "<", $PORT);
+	close $device; # Clears buffer
     }
 
 }
+
 
 __PACKAGE__->main() unless caller;
 
