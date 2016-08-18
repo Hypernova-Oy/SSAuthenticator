@@ -236,7 +236,7 @@ sub isConfigValid() {
     my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey');
     foreach my $param (@params) {
 	if (!getConfig()->param($param)) {
-	    say "$param not defined in daemon.conf";
+	    notifyAboutError("$param not defined in daemon.conf");
 	    $returnValue = 0;
 	}
     }
@@ -245,11 +245,19 @@ sub isConfigValid() {
     if (!$timeout) {
 	return $returnValue;
     } elsif (!($timeout =~ /\d+/)) {
-	say "ConnectionTimeout value is invalid. Valid value is an integer.";
+	my $reason = "ConnectionTimeout value is invalid. " .
+	    "Valid value is an integer.";
+	notifyAboutError($reason);
 	$returnValue = 0;
     }
 
     return $returnValue;
+}
+
+sub notifyAboutError {
+    my ($reason) = @_;
+    say $reason;
+    syslog(LOG_ERR, $reason);
 }
 
 sub updateCache {
@@ -274,16 +282,23 @@ sub controlAccess {
     }
 }
 
+sub exitWithReason {
+    my ($reason) = @_;
+    notifyAboutError($reason);
+    exit(1);
+}
+
 sub main {
     if (!isConfigValid()) {
-	exit 1;
+	exitWithReason("/etc/authenticator/daemon.conf is invalid");
     }
 
     local $/ = getConfig()->param('ScannerReadingSeparator') || "\n";
 
     while (1) {
 	notify(WATCHDOG => 1);
-	open(my $device, "<", "/dev/barcodescanner");
+	open(my $device, "<", "/dev/barcodescanner")
+	    || exitWithReason("No barcode reader attached");
 	my $cardNumber = "";
 	if (timeout_call(
 		0.1,
