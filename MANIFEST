@@ -34,4 +34,5 @@ release.sh
 t/API.t
 t/Config.t
 t/Permission.t
+t/Util.t
 udev/50-library.rules
