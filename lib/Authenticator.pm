@@ -221,13 +221,18 @@ sub denyAccess {
 }
 
 sub getTimeout() {
-    my $defaultTimeout = 3;
+    my $defaultTimeout = 3000;
 
     if (getConfig()->param('ConnectionTimeout')) {
-	return getConfig()->param('ConnectionTimeout');
+	return millisecs2secs(getConfig()->param('ConnectionTimeout'));
     } else {
-	return $defaultTimeout;
+	return millisecs2secs($defaultTimeout);
     }
+}
+
+sub millisecs2secs {
+    my ($milliseconds) = @_;
+    return $milliseconds / 1000;
 }
 
 sub isConfigValid() {
