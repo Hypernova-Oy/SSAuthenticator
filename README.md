@@ -54,28 +54,22 @@ $ git clone https://github.com/KohaSuomi/SSAuthenticator --depth=1
 
 $ cd SSAuthenticator
 
-# Update Debian changelog (add release info and new version (X.XX)).
-# dch will launch you an editor where you can update the changelog.
-$ dch -v X.XX-1
-
-# Update the version number in lib/Authenticator.pm, too!
+# Update version number in lib/Authenticator.pm
 $ $EDITOR lib/Authenticator.pm
 
-$ mv SSAuthenticator authenticator-X.XX
+# Update Debian changelog (see how the old entries are and copy&paste
+# new entry to the changelog). Most important thing is to modify the version.
+# The version should be in the format X.XX-1 where X.XX is your version.
+$ $EDITOR debian/changelog
 
-$ mkdir Packaging && cd Packaging
-$ tar -cvzf authenticator_X.XX.orig.tar.gz ../authenticator-X.XX
-$ tar -xzmf authenticator_X.XX.orig.tar.gz
-$ cd authenticator-X.XX
+# Build .deb package
+# The package will be in ../Authenticator-packaging/ (if everything went fine)
+$ ./release.sh
 
-# Create .deb package, will appear in one directory above current.
-# If you want signed package, leave -uc -us out.
-$ debuild -uc -us
 ```
-
 After that you can create in Github a new release and attach the
-generated binary to it.
-
+generated Debian package to it. Use format vX.XX for the release tag
+(where X.XX is the version number)
 
 ## License
 
