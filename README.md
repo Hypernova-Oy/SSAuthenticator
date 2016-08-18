@@ -52,20 +52,24 @@ libdatetime-format-http-perl libdigest-sha-perl
 ```
 $ git clone https://github.com/KohaSuomi/SSAuthenticator --depth=1
 
-# Replace X.XX with the release version and remember to bump up the
-# number also in lib/Authenticator.pm
+$ cd SSAuthenticator
+
+# Update Debian changelog (add release info and new version (X.XX)).
+# dch will launch you an editor where you can update the changelog.
+$ dch -v X.XX-1
+
+# Update the version number in lib/Authenticator.pm, too!
+$ $EDITOR lib/Authenticator.pm
+
 $ mv SSAuthenticator authenticator-X.XX
 
 $ mkdir Packaging && cd Packaging
-
 $ tar -cvzf authenticator_X.XX.orig.tar.gz ../authenticator-X.XX
-
 $ tar -xzmf authenticator_X.XX.orig.tar.gz
-
 $ cd authenticator-X.XX
 
 # Create .deb package, will appear in one directory above current.
-# for signing the package, leave -uc -us out.
+# If you want signed package, leave -uc -us out.
 $ debuild -uc -us
 ```
 
