@@ -294,7 +294,13 @@ sub exitWithReason {
 }
 
 sub getBarcodeSeparator {
-    return getConfig()->param('ScannerReadingSeparator') || "\n";
+    if (getConfig()->param('CarriageReturnAsSeparator') eq "true") {
+	syslog(LOG_INFO, "using \\r as barcode separator");
+	return "\r";
+    } else {
+	syslog(LOG_INFO, "using \\n as barcode separator");
+	return "\n";
+    }
 }
 
 sub main {
