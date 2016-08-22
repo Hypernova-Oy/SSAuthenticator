@@ -21,14 +21,18 @@ package AutoConfigurer;
 
 use Modern::Perl;
 use Sys::Syslog qw(:standard :macros);
+use Device::SerialPort qw( :PARAM :STAT 0.07 );
 
 sub new {
     my ($class) = @_;
     my $self = {};
 
-    $self->{scannerPath} = "/dev/barcodescanner";
-    open(my $scanner, ">", $self->{scannerPath});
-    $self->{scanner} = $scanner;
+    $self->{scanner} = new Device::SerialPort ("/dev/barcodescanner", 1)
+	|| exitWithReason("No barcodescanner detected");
+    $self->{scanner}->baudrate(9600);
+    $self->{scanner}->parity("odd");
+    $self->{scanner}->databits(8);
+    $self->{scanner}->stopbits(1);
 
     return bless($self, $class);
 }
@@ -42,56 +46,60 @@ sub configure {
 
 sub configureSettings {
     my ($self) = @_;
+    logMessage("Configuring scanner's settings");
     setTerminatorToLF($self);
     setCrossHair($self);
 }
 sub saveAndExitServiceMode {
     my ($self) = @_;
+    logMessage("saving scanner's settings and entering normal mode");
     my $scanner = $self->{scanner};
-    print $scanner '\$Ar\r';
-    sleep 1;
-    setDeviceToNormalMode($self);
+
+    writeCmd($self, "\$Ar\r");
+    sleep 3;
+
+    $scanner->baudrate(9600);
+}
+
+sub isDataWritten {
+    my ($bytesWritten, $sentData) = @_;
+    return $bytesWritten == length($sentData);
 }
 
 sub setTerminatorToLF {
     my ($self) = @_;
-    my $scanner = $self->{scanner};
-    print $scanner '\$CLFSU0D00000000000000000000000000000000000000\r';
-    sleep 3;
+    logMessage("Setting scanner's LF character to \\n");
+    writeCmd($self, "\$CLFSU0D00000000000000000000000000000000000000\r");
+    sleep 2;
 }
 
 sub setCrossHair {
     my ($self) = @_;
-    my $scanner = $self->{scanner};
-    print $scanner '\$FA03760240\r';
-    sleep 3;
+    logMessage("Setting scanner's crosshair");
+    writeCmd($self, "\$FA03760240\r");
+    sleep 2;
 }
 
-sub setDeviceToNormalMode {
-    my ($self) = @_;
-    my $path = $self->{scannerPath};
-    system("stty -F $self->{scannerPath} 9600")
-	|| exitWithReason("Couldn't set scanner's baudrate to 9600");
+sub writeCmd {
+    my ($self, $cmd) = @_;
+    if (!isDataWritten($self->{scanner}->write($cmd), $cmd)) {
+        exitWithReason("Data not written");
+    }
 }
 
 sub setDeviceToServiceMode {
     my ($self) = @_;
+    logMessage("Setting scanner to service mode");
     sendServiceModeSignal($self);
-    setServiceModeBaudRate($self);
+
+    logMessage("Setting baudrate for service mode");
+    $self->{scanner}->baudrate(115200);
 }
 
 sub sendServiceModeSignal {
     my ($self) = @_;
-    my $scanner = $self->{scanner};
-    print $scanner '\$S\r';
-    sleep 1;
-}
-
-sub setServiceModeBaudRate {
-    my ($self) = @_;
-    system("stty -F $self->{scannerPath} 115200") == 0
-	|| exitWithReason("Couldn't set scanner's baudrate to 115200");
-    sleep 1;
+    writeCmd($self, "\$S\r");
+    sleep 3;
 }
 
 sub notifyAboutError {
@@ -106,11 +114,16 @@ sub exitWithReason {
     exit(1);
 }
 
+sub logMessage {
+    my ($message) = @_;
+    say $message;
+}
 
 sub main {
     my $configurer = AutoConfigurer->new;
     $configurer->configure();
-    say "Device configured succesfully!";
+    $configurer->{scanner}->close() || exitWithReason("closing barcode scanner failed");
+    logMessage("Device configured succesfully!");
 }
 
 __PACKAGE__->main() unless caller;
