@@ -293,12 +293,16 @@ sub exitWithReason {
     exit(1);
 }
 
+sub getBarcodeSeparator {
+    return getConfig()->param('ScannerReadingSeparator') || "\n";
+}
+
 sub main {
     if (!isConfigValid()) {
 	exitWithReason("/etc/authenticator/daemon.conf is invalid");
     }
 
-    local $/ = getConfig()->param('ScannerReadingSeparator') || "\n";
+    local $/ = getBarcodeSeparator();
 
     while (1) {
 	notify(WATCHDOG => 1);
