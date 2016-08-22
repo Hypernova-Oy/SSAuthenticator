@@ -8,5 +8,7 @@ WorkingDirectory=/usr/share/perl5
 ExecStart=/usr/bin/perl Authenticator.pm
 
 RestartSec=5s
+WatchdogSec=35s
 Restart=always
+
 PrivateTmp=yes
