@@ -49,6 +49,7 @@ sub configureSettings {
     logMessage("Configuring scanner's settings");
     setTerminatorToLF($self);
     setCrossHair($self);
+    setAutomaticOperatingMode($self);
 }
 sub saveAndExitServiceMode {
     my ($self) = @_;
@@ -56,7 +57,8 @@ sub saveAndExitServiceMode {
     my $scanner = $self->{scanner};
 
     writeCmd($self, "\$Ar\r");
-    sleep 3;
+
+    sleep 3; # exiting service mode takes some time
 
     $scanner->baudrate(9600);
 }
@@ -70,21 +72,25 @@ sub setTerminatorToLF {
     my ($self) = @_;
     logMessage("Setting scanner's LF character to \\n");
     writeCmd($self, "\$CLFSU0D00000000000000000000000000000000000000\r");
-    sleep 2;
 }
 
 sub setCrossHair {
     my ($self) = @_;
     logMessage("Setting scanner's crosshair");
     writeCmd($self, "\$FA03760240\r");
-    sleep 2;
 }
 
+sub setAutomaticOperatingMode {
+    my ($self) = @_;
+    logMessage("Setting 'automatic' operating mode");
+    writeCmd($self, "\$CSNRM02\r");
+}
 sub writeCmd {
     my ($self, $cmd) = @_;
     if (!isDataWritten($self->{scanner}->write($cmd), $cmd)) {
         exitWithReason("Data not written");
     }
+    sleep 1;
 }
 
 sub setDeviceToServiceMode {
