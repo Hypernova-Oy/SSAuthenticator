@@ -254,6 +254,10 @@ sub isConfigValid() {
 	    "Valid value is an integer.";
 	notifyAboutError($reason);
 	$returnValue = 0;
+    } elsif ($timeout > 30000) {
+	my $reason = "ConnectionTimeout value is too big. Max 30000 ms";
+	notifyAboutError($reason);
+	$returnValue = 0;
     }
 
     return $returnValue;
