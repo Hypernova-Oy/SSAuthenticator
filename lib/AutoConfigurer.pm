@@ -42,6 +42,8 @@ sub configure {
     setDeviceToServiceMode($self);
     configureSettings($self);
     saveAndExitServiceMode($self);
+    $self->{scanner}->close()
+	|| exitWithReason("closing barcode scanner failed");
 }
 
 sub configureSettings {
@@ -128,7 +130,6 @@ sub logMessage {
 sub main {
     my $configurer = AutoConfigurer->new;
     $configurer->configure();
-    $configurer->{scanner}->close() || exitWithReason("closing barcode scanner failed");
     logMessage("Device configured succesfully!");
 }
 
