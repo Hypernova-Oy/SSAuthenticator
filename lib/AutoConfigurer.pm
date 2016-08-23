@@ -73,7 +73,7 @@ sub isDataWritten {
 sub setTerminatorToLF {
     my ($self) = @_;
     logMessage("Setting scanner's LF character to \\n");
-    writeCmd($self, "\$CLFSU0D00000000000000000000000000000000000000\r");
+    writeCmd($self, "\$CLFSU0A00000000000000000000000000000000000000\r");
 }
 
 sub setCrossHair {
