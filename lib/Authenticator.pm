@@ -47,6 +47,7 @@ use Systemd::Daemon qw{ -soft notify };
 
 use GPIO;
 use API;
+use AutoConfigurer;
 
 use constant {
     GREEN => 18,
@@ -307,10 +308,19 @@ sub getBarcodeSeparator {
     }
 }
 
+sub configureBarcodeScanner {
+    my $configurer = AutoConfigurer->new;
+    $configurer->configure();
+    syslog(LOG_INFO, "Barcode scanner configured");
+    say "Barcode scanner configured";
+}
+
 sub main {
     if (!isConfigValid()) {
 	exitWithReason("/etc/authenticator/daemon.conf is invalid");
     }
+
+    configureBarcodeScanner();
 
     local $/ = getBarcodeSeparator();
 
