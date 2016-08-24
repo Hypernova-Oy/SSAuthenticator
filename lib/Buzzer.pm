@@ -38,7 +38,6 @@ sub new {
 sub buzz {
     my ($self, $herz, $playTime) = @_;
 
-    say "buzzing for port $self->{buzzerPort} ";
     my $buzzer = GPIO->new($self->{buzzerPort});
     my $waveLength = 1 / $herz;
 
