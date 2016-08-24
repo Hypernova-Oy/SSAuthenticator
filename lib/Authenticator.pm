@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-
 # Copyright (C) 2016 Koha-Suomi
 #
 # This file is part of Authenticator.
@@ -48,13 +47,14 @@ use Systemd::Daemon qw{ -soft notify };
 use GPIO;
 use API;
 use AutoConfigurer;
+use Buzzer;
 
 use constant {
-    GREEN => 18,
-    BLUE => 15,
-    RED => 14,
+    GREEN => 22,
+    BLUE => 27,
+    RED => 17,
     DOOR => 23,
-    BUZZER => 24,
+    BUZZER => 18,
 };
 
 sub getDB {
@@ -185,40 +185,35 @@ sub isAuthorizedCache {
 
 sub grantAccess {
     my $door = GPIO->new(DOOR);
+    my $greenLed = GPIO->new(GREEN);
+
     $door->turnOn();
+    $greenLed->turnOn();
 
-    my $led = GPIO->new(GREEN);
-    $led->turnOn();
+    playAccessBuzz();
 
-    my $buzzer = GPIO->new(BUZZER);
-    buzz($buzzer);
-
-    sleep 1;
-    $led->turnOff();
+    $greenLed->turnOff();
     $door->turnOff();
-    $buzzer->turnOff();
-
-    return 1;
 }
 
-sub buzz {
-    my ($buzzer) = @_;
-    
-    my $sleepTime = 0.020;
-    for (my $i = 0; $i <= 500; $i++) {
-	$buzzer->turnOn();
-	Time::HiRes::usleep($sleepTime);
-	$buzzer->turnOff();
-	Time::HiRes::usleep($sleepTime);
-    }
+sub playAccessBuzz {
+    say "playng acces";
+    my $buzzer = Buzzer->new(BUZZER);
+    $buzzer->buzz(3050, 0.6);
+}
+
+sub playDenyAccessBuzz {
+    say "playing deny";
+    my $buzzer = Buzzer->new(BUZZER);
+    $buzzer->beepWithPauses(3, 0.2, 0.2);
 }
 
 sub denyAccess {
-    my $led = GPIO->new(RED);
-    $led->turnOn();
-    sleep 1;
-    $led->turnOff();
-    return 0;
+    my $redLed = GPIO->new(RED);
+
+    $redLed->turnOn();
+    playDenyAccessBuzz();
+    $redLed->turnOff();
 }
 
 sub getTimeout() {
