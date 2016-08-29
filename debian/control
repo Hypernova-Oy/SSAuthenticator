@@ -7,7 +7,7 @@ Build-Depends: debhelper (>=9), perl, libtest-simple-perl,
  libtest-mockmodule-perl, libmodern-perl-perl, libconfig-simple-perl,
  libdbm-deep-perl, libwww-perl, libjson-perl, libsys-sigaction-perl,
  libdatetime-perl, libdatetime-format-http-perl, libdigest-sha-perl,
- libsystemd-dev
+ libsystemd-dev, libemb-gpio-perl, libemb-buzzer-perl
 
 Package: authenticator
 Architecture: all
@@ -15,7 +15,7 @@ Multi-Arch: foreign
 Depends: perl, libmodern-perl-perl, libconfig-simple-perl,
  libdbm-deep-perl, libwww-perl, libjson-perl, libsys-sigaction-perl,
  libdatetime-perl, libdatetime-format-http-perl, libdigest-sha-perl,
- cpanminus, libsystemd-dev
+ cpanminus, libsystemd-dev, libemb-gpio-perl, libemb-buzzer-perl
 Standards-Version: 3.9.5
 Description: self service library access control daemon
  Authenticator is self service library access control
