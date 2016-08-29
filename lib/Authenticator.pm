@@ -53,8 +53,8 @@ use constant {
     GREEN => 22,
     BLUE => 27,
     RED => 17,
-    DOOR => 23,
-    BUZZER => 18,
+    DOOR => 25,
+    BUZZER => 18
 };
 
 sub getDB {
