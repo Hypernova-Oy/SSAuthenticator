@@ -197,13 +197,11 @@ sub grantAccess {
 }
 
 sub playAccessBuzz {
-    say "playng acces";
     my $buzzer = Buzzer->new(BUZZER);
     $buzzer->buzz(3050, 0.6);
 }
 
 sub playDenyAccessBuzz {
-    say "playing deny";
     my $buzzer = Buzzer->new(BUZZER);
     $buzzer->beepWithPauses(3, 0.2, 0.2);
 }
