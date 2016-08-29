@@ -1,6 +1,3 @@
-autoconfigurator/common.sh
-autoconfigurator/setCrosshair.sh
-autoconfigurator/setPrefix.sh
 barcodeReaderManualConfigurationCodes.png
 Build.PL
 DatalogicGryphonGFS4400ReferenceManual820049614RevC.pdf
@@ -26,7 +23,6 @@ install.sh
 lib/API.pm
 lib/Authenticator.pm
 lib/AutoConfigurer.pm
-lib/GPIO.pm
 LICENSE
 MANIFEST
 README.md
