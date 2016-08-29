@@ -1,3 +1,11 @@
+authenticator (0.12-1) UNRELEASED; urgency=low
+
+  * Correct GPIO pins
+  * More robust error checking
+  * Move Buzzer and GPIO to their own packages
+
+ -- Joonas Kylmälä <joonas.kylmala@jns.fi>  Thu, 29 Aug 2016 11:07:00 +0000
+
 authenticator (0.11-1) UNRELEASED; urgency=low
 
   * Add watchdog support (experimental, need to be enable in service file).
