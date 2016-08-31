@@ -292,6 +292,7 @@ sub exitWithReason {
 }
 
 sub getBarcodeSeparator {
+    # TODO: Check if param exists before comparing.
     if (getConfig()->param('CarriageReturnAsSeparator') eq "true") {
 	syslog(LOG_INFO, "using \\r as barcode separator");
 	return "\r";
