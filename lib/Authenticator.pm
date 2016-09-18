@@ -47,14 +47,14 @@ use Systemd::Daemon qw{ -soft notify };
 use GPIO;
 use API;
 use AutoConfigurer;
-use Buzzer;
+use RTTTL::Player;
 
 use constant {
     GREEN => 22,
     BLUE => 27,
     RED => 17,
     DOOR => 25,
-    BUZZER => 18
+    BUZZER => 1,
 };
 
 sub getDB {
@@ -196,14 +196,15 @@ sub grantAccess {
     $door->turnOff();
 }
 
+my $player;
 sub playAccessBuzz {
-    my $buzzer = Buzzer->new(BUZZER);
-    $buzzer->buzz(3050, 0.6);
+    $player = RTTTL::Player->new({pin => BUZZER}) unless $player;
+    $player->playSong('toveri_access_granted');
 }
 
 sub playDenyAccessBuzz {
-    my $buzzer = Buzzer->new(BUZZER);
-    $buzzer->beepWithPauses(3, 0.2, 0.2);
+    $player = RTTTL::Player->new({pin => BUZZER}) unless $player;
+    $player->playSong('toveri_access_denied');
 }
 
 sub denyAccess {
@@ -320,18 +321,24 @@ sub main {
 
     while (1) {
 	notify(WATCHDOG => 1);
-	open(my $device, "<", "/dev/barcodescanner")
-	    || exitWithReason("No barcode reader attached");
+        my $device;
+        for (my $tries=0 ; $tries < 10 ; $tries++) {
+            open($device, "<", "/dev/barcodescanner");
+            last if $device;
+            sleep 1;
+        }
+        exitWithReason("No barcode reader attached") unless $device;
 	my $cardNumber = "";
 	if (timeout_call(
-		0.1,
+		30,
 		sub {$cardNumber = <$device>})) {
 	    next;
 	}
-	chomp($cardNumber);
+        if ($cardNumber) {
+	    chomp($cardNumber);
 
-	controlAccess($cardNumber);
-
+	    controlAccess($cardNumber);
+        }
 	close $device; # Clears buffer
     }
 
