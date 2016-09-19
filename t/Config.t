@@ -1,48 +1,33 @@
 use Modern::Perl;
-use Test::More tests => 2;
+use Test::More;
 use Test::MockModule;
+
+use t::Examples;
 
 use Authenticator;
 
-subtest "Config validation works", \&testConfigValidation;
-sub testConfigValidation {
-    my $module = Test::MockModule->new('Authenticator');
-    $module->mock('getConfig', \&getConfig);
-    
-    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey');
-    foreach my $param (@params) {
-	open(my $fh, ">", "daemon.conf");
-	say $fh $param, " testValue";
-	close $fh;
-	ok(!Authenticator::isConfigValid(), "partial (only $param".
-	   ") config not valid");
-    }
-
-
-    rmConfig();
-}
 
 subtest "Config timeout validation works", \&testConfigTimeoutValidation;
 sub testConfigTimeoutValidation {
 
-    my $module = Test::MockModule->new('Authenticator');
-    $module->mock('getConfig', \&getConfig);
+    my ($defaultConfTempFile);
 
-    makeConfigValid();
+    $defaultConfTempFile = t::Examples::writeBadConnectionTimeoutConf();
+    Authenticator::setConfigFile($defaultConfTempFile->filename());
 
-    open(my $fh, ">>", "daemon.conf");
-    say $fh "ConnectionTimeout", " testString";
-    close $fh;
     ok(!Authenticator::isConfigValid(), "not string as timeout value");
+    rmConfig();
 
-    open($fh, ">>", "daemon.conf");
-    say "\n";
-    say $fh "ConnectionTimeout", " 3";
-    close $fh;
+    $defaultConfTempFile = t::Examples::writeDefaultConf();
+    Authenticator::setConfigFile($defaultConfTempFile->filename());
+
     ok(Authenticator::isConfigValid(), "integer is valid timeout value");
-
     rmConfig();
 }
+
+
+######## TEST HELPERS #########
+###############################
 
 sub makeConfigValid() {
     open(my $fh, ">", "daemon.conf");
@@ -67,3 +52,5 @@ sub getConfig {
 	"Please check the syntax in daemon.conf.";
     return $config;
 }
+
+done_testing;

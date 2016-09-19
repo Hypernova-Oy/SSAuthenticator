@@ -56,6 +56,10 @@ sub getDB {
 
 my $config;
 my $configFile = "/etc/authenticator/daemon.conf";
+sub setConfigFile {
+    my ($overloadedConfigFile) = @_;
+    $configFile = $overloadedConfigFile;
+}
 sub getConfig {
     $config = new Config::Simple($configFile)
 	|| die Config::Simple->error(), ".\n",
@@ -65,6 +69,40 @@ sub getConfig {
 }
 sub unloadConfig {
     $config = undef;
+}
+
+my $leds = {};
+sub initLeds {
+    $leds->{red}   = GPIO->new(getConfig()->param('RedLEDPin'));
+    $leds->{green} = GPIO->new(getConfig()->param('GreenLEDPin'));
+    $leds->{blue}  = GPIO->new(getConfig()->param('BlueLEDPin'));
+}
+sub ledOn {
+    my ($colour) = @_;
+    initLeds() unless $leds->{$colour};
+    $leds->{$colour}->turnOn();
+    return 1;
+}
+sub ledOff {
+    my ($colour) = @_;
+    initLeds() unless $leds->{$colour};
+    $leds->{$colour}->turnOff();
+    return 1;
+}
+
+my $doorRelay;
+sub initDoor {
+    $doorRelay = GPIO->new(getConfig()->param('DoorPin'));
+}
+sub doorOn {
+    initDoor() unless $doorRelay;
+    $doorRelay->turnOn();
+    return 1;
+}
+sub doorOff {
+    initDoor() unless $doorRelay;
+    $doorRelay->turnOff();
+    return 1;
 }
 
 sub isAuthorized {
@@ -180,16 +218,14 @@ sub isAuthorizedCache {
 }
 
 sub grantAccess {
-    my $door = GPIO->new(getConfig()->param('DoorPin'));
-    my $greenLed = GPIO->new(getConfig()->param('GreenLEDPin'));
 
-    $door->turnOn();
-    $greenLed->turnOn();
+    doorOn();
+    ledOn('green');
 
     playAccessBuzz();
 
-    $greenLed->turnOff();
-    $door->turnOff();
+    ledOff('green');
+    doorOff();
 }
 
 sub playAccessBuzz {
@@ -214,11 +250,9 @@ sub playRTTTL {
 }
 
 sub denyAccess {
-    my $redLed = GPIO->new(getConfig()->param('RedLEDPin'));
-
-    $redLed->turnOn();
+    ledOn('red');
     playDenyAccessBuzz();
-    $redLed->turnOff();
+    ledOff('red');
 }
 
 sub getTimeout() {
@@ -239,7 +273,7 @@ sub millisecs2secs {
 sub isConfigValid() {
     my $returnValue = 1;
 
-    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorLEDPin', 'RTTTL-PlayerPin');
+    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'RTTTL-PlayerPin');
     foreach my $param (@params) {
 	if (!getConfig()->param($param)) {
 	    notifyAboutError("$param not defined in daemon.conf");
