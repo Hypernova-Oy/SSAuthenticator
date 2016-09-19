@@ -57,6 +57,7 @@ sub makeConfigValid() {
 
 sub rmConfig {
     unlink "daemon.conf";
+    Authenticator::unloadConfig();
 }
 
 sub getConfig {

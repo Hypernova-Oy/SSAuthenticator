@@ -47,15 +47,6 @@ use Systemd::Daemon qw{ -soft notify };
 use GPIO;
 use API;
 use AutoConfigurer;
-use RTTTL::Player;
-
-use constant {
-    GREEN => 22,
-    BLUE => 27,
-    RED => 17,
-    DOOR => 25,
-    BUZZER => 1,
-};
 
 sub getDB {
     my $CARDNUMBER_FILE = "/var/cache/authenticator/patron.db";
@@ -63,12 +54,17 @@ sub getDB {
     return $CARDNUMBER_DB;
 }
 
+my $config;
+my $configFile = "/etc/authenticator/daemon.conf";
 sub getConfig {
-    my $configFile = "/etc/authenticator/daemon.conf";
-    my $config = new Config::Simple($configFile)
+    $config = new Config::Simple($configFile)
 	|| die Config::Simple->error(), ".\n",
-	"Please check the syntax in /etc/authenticator/daemon.conf.";
+	"Please check the syntax in /etc/authenticator/daemon.conf."
+        unless $config;
     return $config;
+}
+sub unloadConfig {
+    $config = undef;
 }
 
 sub isAuthorized {
@@ -184,8 +180,8 @@ sub isAuthorizedCache {
 }
 
 sub grantAccess {
-    my $door = GPIO->new(DOOR);
-    my $greenLed = GPIO->new(GREEN);
+    my $door = GPIO->new(getConfig()->param('DoorPin'));
+    my $greenLed = GPIO->new(getConfig()->param('GreenLEDPin'));
 
     $door->turnOn();
     $greenLed->turnOn();
@@ -196,19 +192,29 @@ sub grantAccess {
     $door->turnOff();
 }
 
-my $player;
 sub playAccessBuzz {
-    $player = RTTTL::Player->new({pin => BUZZER}) unless $player;
-    $player->playSong('toveri_access_granted');
+    playRTTTL('toveri_access_granted');
 }
-
 sub playDenyAccessBuzz {
-    $player = RTTTL::Player->new({pin => BUZZER}) unless $player;
-    $player->playSong('toveri_access_denied');
+    playRTTTL('toveri_access_denied');
+}
+sub playRTTTL {
+    my ($song) = @_;
+    system('rtttl-player','-p',getConfig()->param('RTTTL-PlayerPin'),'-o',"song-$song");
+    if ($? == -1) {
+        warn "failed to execute: $!\n";
+    }
+    elsif ($? & 127) {
+        warn sprintf "rtttl-player died with signal %d, %s coredump\n",
+        ($? & 127),  ($? & 128) ? 'with' : 'without';
+    }
+    else {
+        warn sprintf "rtttl-player exited with value %d\n", $? >> 8;
+    };
 }
 
 sub denyAccess {
-    my $redLed = GPIO->new(RED);
+    my $redLed = GPIO->new(getConfig()->param('RedLEDPin'));
 
     $redLed->turnOn();
     playDenyAccessBuzz();
@@ -233,7 +239,7 @@ sub millisecs2secs {
 sub isConfigValid() {
     my $returnValue = 1;
 
-    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey');
+    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorLEDPin', 'RTTTL-PlayerPin');
     foreach my $param (@params) {
 	if (!getConfig()->param($param)) {
 	    notifyAboutError("$param not defined in daemon.conf");

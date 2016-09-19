@@ -37,6 +37,12 @@ sub createConfig {
     say $fh "ConnectionTimeout 3";
     say $fh "ApiKey testAPikey";
     say $fh "ApiUserName testUser";
+    say $fh "GreenLEDPin 22";
+    say $fh "BlueLEDPin 27";
+    say $fh "RedLEDPin 17";
+    say $fh "DoorPin 25";
+    say $fh "RTTTL-PlayerPin 1";
+
     close $fh;
 }
 
@@ -52,6 +58,7 @@ sub rmCacheDB {
 
 sub rmConfig {
     unlink "daemon.conf";
+    Authenticator::unloadConfig();
 }
 
 subtest "Can use library", \&testLibraryUsagePermission;
