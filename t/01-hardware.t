@@ -47,8 +47,8 @@ sub beeperInspection {
 
 subtest "Manually inspect OLED display.", \&OLEDInspection;
 sub OLEDInspection {
-    print "You should see the 'access granted' message\n";
-    ok(SSAuthenticator::printRow('toveri_access_granted'), "Access granted sound played");
+    print "You should see the 'Display test' message\n";
+    ok(SSAuthenticator::showOLEDMsg('Display test'), "OLED display works");
 }
 
 t::Examples::rmConfig();

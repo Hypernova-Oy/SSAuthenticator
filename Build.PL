@@ -23,7 +23,7 @@ my $build = Module::Build->new
      },
      requires => {
          'POSIX' => '1',
-         'libintl-perl' => '1.26',
+         'Locale::TextDomain' => '1.26',
      },
 
     );

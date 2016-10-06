@@ -32,10 +32,10 @@ use Time::HiRes;
 use Sys::Syslog qw(:standard :macros);
 use Systemd::Daemon qw{ -soft notify };
 use OLED::Client;
-use Locale::TextDomain qw (SSAuthenticator ./ /usr/share/locale /usr/local/share/locale); #Look from cwd or system defaults. This is needed for tests to pass during build
-use Locale::Messages qw (LC_MESSAGES);
+
 use POSIX;
-POSIX::setlocale (LC_MESSAGES, "");
+use Locale::TextDomain qw (SSAuthenticator ./ /usr/share/locale); #Look from cwd or system defaults. This is needed for tests to pass during build
+POSIX::setlocale (LC_ALL, ""); #Set the environment locale
 
 use GPIO;
 use API;
@@ -101,8 +101,7 @@ sub doorOff {
 my $display = OLED::Client->new();
 sub showOLEDMsg {
     my ($msg) = @_;
-    my $translation = _translate($msg);
-    $display->printRow(0, $translation);
+    $display->printRow(0, $msg);
 }
 
 sub isAuthorized {

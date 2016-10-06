@@ -24,4 +24,5 @@ mkdir -p LocaleData/$lang/LC_MESSAGES
 msgfmt  -o LocaleData/$lang/LC_MESSAGES/$textdomain.mo --check po/$lang.po
 
 #4. Install translated machine objects to system
-cp LocaleData/$lang/LC_MESSAGES/$textdomain.mo /usr/share/locale/
+mkdir -p /usr/share/locale/$lang/LC_MESSAGES/
+cp LocaleData/$lang/LC_MESSAGES/$textdomain.mo /usr/share/locale/$lang/LC_MESSAGES/

@@ -1,4 +1,3 @@
-#!/usr/bin/perl
 #
 # Copyright (C) 2016 Koha-Suomi
 #

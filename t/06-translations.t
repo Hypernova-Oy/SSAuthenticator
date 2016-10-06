@@ -8,10 +8,15 @@ use Test::More;
 use Test::MockModule;
 
 use SSAuthenticator;
-use Locale::TextDomain qw (SSAuthenticator ./ /usr/share/locale /usr/local/share/locale); #Look from cwd or system defaults. This is needed for tests to pass during build
-use Locale::Messages qw (LC_MESSAGES);
+
+use t::Examples;
+
+#Set the locale to fi_FI to test the expected Finnish language translations
 use POSIX;
-POSIX::setlocale (LC_MESSAGES, "fi_FI.utf-8");
+POSIX::setlocale (LC_ALL, "fi_FI.UTF-8");
+
+my $defaultConfTempFile = t::Examples::writeDefaultConf();
+SSAuthenticator::setConfigFile($defaultConfTempFile->filename());
 
 subtest "Translations work", \&translationsWork;
 sub translationsWork {
@@ -30,5 +35,7 @@ sub translationsWork {
     is($agentText, 'Paasy evatty');
 
 }
+
+t::Examples::rmConfig();
 
 done_testing();
