@@ -2,11 +2,11 @@ version=$( head debian/changelog -n1 | sed 's/.*(//' | sed 's/-.*//')
 
 cd ..
 
-mkdir Authenticator-packaging && cd Authenticator-packaging
+mkdir SSAuthenticator-packaging && cd SSAuthenticator-packaging
 
-cp ../SSAuthenticator authenticator-$version -r
+cp ../SSAuthenticator ssauthenticator-$version -r
 
-tar -cvzf authenticator_$version.orig.tar.gz authenticator-$version
-cd authenticator-$version
+tar -cvzf ssauthenticator_$version.orig.tar.gz ssauthenticator-$version
+cd ssauthenticator-$version
 
 debuild -uc -us

@@ -3,7 +3,7 @@ use Module::Build;
 
 my $build = Module::Build->new
     (
-     module_name => 'Authenticator',
+     module_name => 'SSAuthenticator',
      dist_author => 'Joonas Kylmälä <joonas.kylmala@jns.fi>',
      dist_abstract => 'Controls access to library',
 
@@ -20,6 +20,10 @@ my $build = Module::Build->new
 	 'DateTime' => '1',
 	 'DateTime::Format::HTTP' => '0.4',
 	 'Digest::SHA' => '5',
+     },
+     requires => {
+         'POSIX' => '1',
+         'libintl-perl' => '1.26',
      },
 
     );

@@ -21,7 +21,7 @@ electronic-designs/schematic.pdf
 etc/daemon.conf
 install.sh
 lib/API.pm
-lib/Authenticator.pm
+lib/SSAuthenticator.pm
 lib/AutoConfigurer.pm
 LICENSE
 MANIFEST

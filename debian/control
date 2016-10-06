@@ -1,4 +1,4 @@
-Source: authenticator
+Source: ssauthenticator
 Section: misc
 Priority: optional
 Maintainer: Joonas Kylmälä <joonas.kylmala@jns.fi>
@@ -9,7 +9,7 @@ Build-Depends: debhelper (>=9), perl, libtest-simple-perl,
  libdatetime-perl, libdatetime-format-http-perl, libdigest-sha-perl,
  libsystemd-dev, libemb-gpio-perl, libemb-buzzer-perl
 
-Package: authenticator
+Package: ssauthenticator
 Architecture: armhf
 Multi-Arch: foreign
 Depends: perl, libmodern-perl-perl, libconfig-simple-perl,
@@ -18,7 +18,7 @@ Depends: perl, libmodern-perl-perl, libconfig-simple-perl,
  cpanminus, libsystemd-dev, libemb-gpio-perl, libemb-buzzer-perl
 Standards-Version: 3.9.5
 Description: self service library access control daemon
- Authenticator is self service library access control
+ SSAuthenticator is self service library access control
  system daemon that you can use for controlling patron
  access to a library. It uses Koha to fetch the access
  information.

@@ -1,7 +1,9 @@
-# Authenticator
+# SSAuthenticator
 
-Authenticator is a system daemon that controls access to a library
+SSAuthenticator is a system daemon that controls access to a library
 using Koha instance's REST API and its local cache as fallback.
+
+This is part of the emb-toveri repository, which explaings the hardware configuration and assembly.
 
 ## Installation
 
@@ -54,8 +56,8 @@ $ git clone https://github.com/KohaSuomi/SSAuthenticator --depth=1
 
 $ cd SSAuthenticator
 
-# Update version number in lib/Authenticator.pm
-$ $EDITOR lib/Authenticator.pm
+# Update version number in lib/SSAuthenticator.pm
+$ $EDITOR lib/SSAuthenticator.pm
 
 # Update Debian changelog (see how the old entries are and copy&paste
 # new entry to the changelog). Most important thing is to modify the version.
@@ -63,7 +65,7 @@ $ $EDITOR lib/Authenticator.pm
 $ $EDITOR debian/changelog
 
 # Build .deb package
-# The package will be in ../Authenticator-packaging/ (if everything went fine)
+# The package will be in ../SSAuthenticator-packaging/ (if everything went fine)
 $ ./release.sh
 
 ```
@@ -73,17 +75,17 @@ generated Debian package to it. Use format vX.XX for the release tag
 
 ## License
 
-Authenticator is free software; you can redistribute it and/or modify
+SSAuthenticator is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or (at
 your option) any later version.
 
-Authenticator is distributed in the hope that it will be useful, but
+SSAuthenticator is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Authenticator; if not, write to the Free Software
+along with SSAuthenticator; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301 USA

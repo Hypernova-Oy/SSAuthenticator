@@ -6,43 +6,49 @@ use Test::MockModule;
 
 use t::Examples;
 
-use Authenticator;
+use SSAuthenticator;
 
 my $defaultConfTempFile = t::Examples::writeDefaultConf();
-Authenticator::setConfigFile($defaultConfTempFile->filename());
+SSAuthenticator::setConfigFile($defaultConfTempFile->filename());
 
 subtest "Manually inspect LEDs", \&ledInspection;
 sub ledInspection {
     my $ledDuration = 1;
 
     print "Turning red led on for $ledDuration seconds\n";
-    ok(Authenticator::ledOn('red'), "Red on");
+    ok(SSAuthenticator::ledOn('red'), "Red on");
     sleep($ledDuration);
-    ok(Authenticator::ledOff('red'), "Red off");
+    ok(SSAuthenticator::ledOff('red'), "Red off");
 
     print "Turning green led on for $ledDuration seconds\n";
-    ok(Authenticator::ledOn('green'), "Green on");
+    ok(SSAuthenticator::ledOn('green'), "Green on");
     sleep($ledDuration);
-    ok(Authenticator::ledOff('green'), "Green off");
+    ok(SSAuthenticator::ledOff('green'), "Green off");
 
     print "Turning blue led on for $ledDuration seconds\n";
-    ok(Authenticator::ledOn('blue'), "Blue on");
+    ok(SSAuthenticator::ledOn('blue'), "Blue on");
     sleep($ledDuration);
-    ok(Authenticator::ledOff('blue'), "Blue off");
+    ok(SSAuthenticator::ledOff('blue'), "Blue off");
 }
 
 subtest "Manually inspect door non-latching relay.", \&doorInspection;
 sub doorInspection {
     print "You should hear two clicks from the relay with a 1 second delay\n";
-    ok(Authenticator::doorOn(), "Door opened");
+    ok(SSAuthenticator::doorOn(), "Door opened");
     sleep 1;
-    ok(Authenticator::doorOff(), "Door closed");
+    ok(SSAuthenticator::doorOff(), "Door closed");
 }
 
 subtest "Manually inspect beeper.", \&beeperInspection;
 sub beeperInspection {
     print "You should hear the access granted sound\n";
-    ok(Authenticator::playRTTTL('toveri_access_granted'), "Access granted sound played");
+    ok(SSAuthenticator::playRTTTL('toveri_access_granted'), "Access granted sound played");
+}
+
+subtest "Manually inspect OLED display.", \&OLEDInspection;
+sub OLEDInspection {
+    print "You should see the 'access granted' message\n";
+    ok(SSAuthenticator::printRow('toveri_access_granted'), "Access granted sound played");
 }
 
 t::Examples::rmConfig();

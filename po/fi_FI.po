@@ -1,0 +1,26 @@
+# Finnish translations for PACKAGE package.
+# Copyright (C) 2016 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Olli-Antti Kivilahti <olli-antti.kivilahti@jns.fi>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SSAuthenticator 0.12\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-10-06 14:31+0300\n"
+"PO-Revision-Date: 2016-10-06 14:28+0300\n"
+"Last-Translator: Olli-Antti Kivilahti <olli-antti.kivilahti@jns.fi>\n"
+"Language-Team: Finnish\n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/Authenticator.pm:225
+msgid "Access granted"
+msgstr "Paasy sallittu"
+
+#: lib/Authenticator.pm:255
+msgid "Access denied"
+msgstr "Paasy evatty"
