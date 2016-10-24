@@ -5,34 +5,22 @@
 # This file is part of SSAuthenticator.
 #
 
-use Test::More tests => 4;
+use Modern::Perl;
+
+use Test::More;
 use Test::MockModule;
 
+use HTTP::Response;
+
+use t::Examples;
 use SSAuthenticator;
 use JSON;
 
-my %users = (morko => {access => 'false', barcode => '1A00MÖRKÖ'},
-	     myy => {access => 'false', barcode => '1A00PIKKU'},
-	     haisuli => {access => 'false', barcode => '1A00HAISU'},
-	     niisku => {access => 'true', barcode => '1A00NIISKU'}
-    );
-
-
-sub createConfig {
-    open(my $fh, ">", "daemon.conf");
-    say $fh "ApiBaseUrl http://localhost-api/api/v1";
-    say $fh "LibraryName MyTestLibrary";
-    say $fh "ConnectionTimeout 3";
-    say $fh "ApiKey testAPikey";
-    say $fh "ApiUserName testUser";
-    say $fh "GreenLEDPin 22";
-    say $fh "BlueLEDPin 27";
-    say $fh "RedLEDPin 17";
-    say $fh "DoorPin 25";
-    say $fh "RTTTL-PlayerPin 1";
-
-    close $fh;
-}
+my %users = (
+    '1A00MÖRKÖ'       => {permission => 'false', error => 'Koha::Exception::UnknownObject', httpCode => 404, authStatus => SSAuthenticator::ERR_BADCARD},
+    '1A00PIKKUMYY'    => {permission => 'false', error => 'Koha::Exception::SelfService::PermissionRevoked', httpCode => 200, authStatus => SSAuthenticator::ERR_REVOKED},
+    '1A00HAISULI'     => {permission => 'false', error => 'Koha::Exception::FeatureUnavailable', httpCode => 501, authStatus => SSAuthenticator::ERR_ERR},
+);
 
 sub createCacheDB {
     open(my $fh, ">", "patron.db");
@@ -44,56 +32,32 @@ sub rmCacheDB {
     unlink "patron.db";
 }
 
-sub rmConfig {
-    unlink "daemon.conf";
-    SSAuthenticator::unloadConfig();
-}
-
 subtest "Can use library", \&testLibraryUsagePermission;
 sub testLibraryUsagePermission {
+    my ($module);
+
     createCacheDB();
-    createConfig();
+    t::Examples::writeDefaultConf();
 
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getConfig', \&getConfig);
-
-    my $module = Test::MockModule->new('SSAuthenticator');
+    $module = Test::MockModule->new('SSAuthenticator');
     $module->mock('getDB', \&getDB);
 
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getApiResponseValues', \&getApiResponseValuesMock);
+    $module = Test::MockModule->new('SSAuthenticator');
+    $module->mock('getApiResponse', \&getApiResponseMock);
 
-    foreach $user (keys %users) {
-	my $access = $users{$user}{access} eq "true" ? 1 : 0;
-	is(SSAuthenticator::canUseLibrary($users{$user}{barcode}), $access,
-	   "$user permission to use library");
+    foreach my $barcode (keys %users) {
+        my ($authStatus, $cacheUsed) = SSAuthenticator::isAuthorized($barcode);
+        is($authStatus, $users{$barcode}->{authStatus},
+           "$barcode permission to use library");
+
+        is(SSAuthenticator::isAuthorizedCache($barcode), $users{$barcode}->{authStatus},
+           "$barcode auth status cached");
+
+        is($cacheUsed, 0,
+           "Cache not used");
     }
 
-    rmConfig();
-    rmCacheDB();
-}
-
-subtest "Authorized to access the build now", \&testApiAccess;
-sub testApiAccess {
-    createCacheDB();
-    createConfig();
-
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getConfig', \&getConfig);
-
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getDB', \&getDB);
-
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getApiResponseValues', \&getApiResponseValuesMock);
-
-    foreach $user (keys %users) {
-	my $access = $users{$user}{access} eq "true" ? 1 : 0;
-	is(SSAuthenticator::isAuthorized($users{$user}{barcode}), $access,
-	   "$user can enter the building");
-    }
-
-    rmConfig();
+    t::Examples::rmConfig();
     rmCacheDB();
 }
 
@@ -101,66 +65,32 @@ sub testApiAccess {
 subtest "Cache access authorization", \&testCacheAccess;
 sub testCacheAccess {
     createCacheDB();
-    createConfig();
-
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getConfig', \&getConfig);
+    t::Examples::writeDefaultConf();
 
     my $module = Test::MockModule->new('SSAuthenticator');
     $module->mock('getDB', \&getDB);
     
-    SSAuthenticator::updateCache("1A00TEST", 1);
+    SSAuthenticator::updateCache("1A00TEST", SSAuthenticator::OK);
 
-    ok(SSAuthenticator::isAuthorizedCache("1A00TEST"),
+    is(SSAuthenticator::isAuthorizedCache("1A00TEST"), SSAuthenticator::OK,
        "Authorized from cache");
 
     # Clean before testing
     SSAuthenticator::getDB()->delete("1A00TEST");
-    SSAuthenticator::updateCache("1A00TEST", 0);
+    SSAuthenticator::updateCache("1A00TEST", SSAuthenticator::ERR_ERR);
 
-    ok(!SSAuthenticator::isAuthorizedCache("1A00TEST"),
+    is(SSAuthenticator::isAuthorizedCache("1A00TEST"), SSAuthenticator::ERR_ERR,
        "Not authorized from cache");
 
     rmCacheDB();
-    rmConfig();
+    t::Examples::rmConfig();
 }
 
-# Test cache primitive operations.
-subtest "Cache updating", \&testCacheUpdating;
-sub testCacheUpdating {
-    createConfig();
-    createCacheDB(); 
 
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getConfig', \&getConfig);
-    
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('getDB', \&getDB);
-       
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('isAuthorized', sub {
-	return 1;
-		  });
 
-    SSAuthenticator::controlAccess("1A00TEST");
-    my $entry = SSAuthenticator::getDB()->get("1A00TEST");
-    ok($$entry{access},
-       "Put to cache when permission and access granted");
+done_testing();
 
-    $module->mock('isAuthorized', sub {
-	return 0;
-		  });
 
-    SSAuthenticator::controlAccess("1A00TEST");
-
-    my $entry = SSAuthenticator::getDB()->get("1A00TEST");
-
-    ok(!$$entry{access},
-       "Updated cache value to denied");
-
-    rmConfig();
-    rmCacheDB();
-}
 
 sub getDB {
     my $CARDNUMBER_FILE = "patron.db";
@@ -168,32 +98,20 @@ sub getDB {
     return $CARDNUMBER_DB;
 }
 
-sub getConfig {
-    my $configFile = "daemon.conf";
-    my $config = new Config::Simple($configFile)
-	|| die Config::Simple->error(), ".\n",
-	"Please check the syntax in daemon.conf.";
-    return $config;
-}
-
-
-sub getApiResponseValuesMock {
+sub getApiResponseMock {
     my ($cardNumber) = @_;
 
-    my $permitted = 0;
-    foreach $user (keys %users) {
-	if ($users{$user}{barcode} eq $cardNumber) {
-	    $permitted = $users{$user}{access} eq "true" ? 1 : 0;
-	}
-    }
+    my $jsonBody = JSON::encode_json({
+        error => $users{$cardNumber}->{error},
+        permission => $users{$cardNumber}->{permission},
+    });
 
-    my %responseContent = ();
-    
-    if ($permitted) {
-	$responseContent{permission} = "true";
-    } else {
-	$responseContent{permission} = "false";
-    }
+    my $response = HTTP::Response->new(
+        $users{$cardNumber}->{httpCode},
+        undef,
+        undef,
+        $jsonBody,
+    );
 
-    return \%responseContent;
+    return $response;
 }

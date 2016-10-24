@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-06 14:31+0300\n"
+"POT-Creation-Date: 2016-10-24 17:27+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,10 +17,62 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: lib/Authenticator.pm:225
-msgid "Access granted"
+#: lib/SSAuthenticator.pm:60
+msgid "   Access granted   "
 msgstr ""
 
-#: lib/Authenticator.pm:255
-msgid "Access denied"
+#: lib/SSAuthenticator.pm:61
+msgid "   Access denied    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:62
+msgid "     Age limit      "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:63
+msgid ""
+" Terms & Conditions \n"
+"    not accepted    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:64
+msgid ""
+"   Wrong borrower   \n"
+"      category      "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:65
+msgid ""
+" Self-service usage \n"
+" permission revoked "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:66
+msgid ""
+" Circulation rules  \n"
+"    not followed    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:67
+msgid "   Library closed   "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:68
+msgid "Card not recognized "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:69
+msgid "   Network error    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:70
+msgid "   Strange error    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:71
+msgid " I Remembered you!  "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:72
+msgid "Contact your library"
 msgstr ""

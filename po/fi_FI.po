@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SSAuthenticator 0.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-06 14:31+0300\n"
+"POT-Creation-Date: 2016-10-24 17:27+0300\n"
 "PO-Revision-Date: 2016-10-06 14:28+0300\n"
 "Last-Translator: Olli-Antti Kivilahti <olli-antti.kivilahti@jns.fi>\n"
 "Language-Team: Finnish\n"
@@ -17,10 +17,64 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/Authenticator.pm:225
-msgid "Access granted"
+#: lib/SSAuthenticator.pm:60
+#, fuzzy
+msgid "   Access granted   "
 msgstr "Paasy sallittu"
 
-#: lib/Authenticator.pm:255
-msgid "Access denied"
+#: lib/SSAuthenticator.pm:61
+#, fuzzy
+msgid "   Access denied    "
 msgstr "Paasy evatty"
+
+#: lib/SSAuthenticator.pm:62
+msgid "     Age limit      "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:63
+msgid ""
+" Terms & Conditions \n"
+"    not accepted    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:64
+msgid ""
+"   Wrong borrower   \n"
+"      category      "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:65
+msgid ""
+" Self-service usage \n"
+" permission revoked "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:66
+msgid ""
+" Circulation rules  \n"
+"    not followed    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:67
+msgid "   Library closed   "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:68
+msgid "Card not recognized "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:69
+msgid "   Network error    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:70
+msgid "   Strange error    "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:71
+msgid " I Remembered you!  "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:72
+msgid "Contact your library"
+msgstr ""

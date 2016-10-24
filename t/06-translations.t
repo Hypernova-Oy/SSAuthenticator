@@ -7,33 +7,40 @@
 use Test::More;
 use Test::MockModule;
 
-use SSAuthenticator;
-
 use t::Examples;
 
-#Set the locale to fi_FI to test the expected Finnish language translations
-use POSIX;
-POSIX::setlocale (LC_ALL, "fi_FI.UTF-8");
-
+use SSAuthenticator;
 my $defaultConfTempFile = t::Examples::writeDefaultConf();
 SSAuthenticator::setConfigFile($defaultConfTempFile->filename());
 
-subtest "Translations work", \&translationsWork;
-sub translationsWork {
+subtest "Translations fi_FI", \&translationsFi_FI;
+sub translationsFi_FI {
+    #Set the locale to fi_FI to test the expected Finnish language translations
+    SSAuthenticator::changeLanguage('fi_FI', 'UTF-8');
+    my $arr;
 
-    my $agentText;
+    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::OK, 0 );
+    is($arr->[0],
+       'Paasy sallittu');
 
-    my $module = Test::MockModule->new('SSAuthenticator');
-    $module->mock('showOLEDMsg', sub {
-        $agentText = shift; #Leak the translated message
-    });
+    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::ERR_REVOKED, 0 );
+    is($arr->[0],
+       'Paasy evatty');
+}
 
-    SSAuthenticator::grantAccess();
-    is($agentText, 'Paasy sallittu');
+subtest "Translations en_GB", \&translationsEn_GB;
+sub translationsEn_GB {
+    #Set the locale to english
+    SSAuthenticator::changeLanguage('en_GB', 'UTF-8');
+    my $arr;
 
-    SSAuthenticator::denyAccess();
-    is($agentText, 'Paasy evatty');
+    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::OK, 0 );
+    is($arr->[0],
+       'Access granted');
 
+    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::ERR_REVOKED, 0 );
+    is($arr->[0],
+       'Access denied');
 }
 
 t::Examples::rmConfig();
