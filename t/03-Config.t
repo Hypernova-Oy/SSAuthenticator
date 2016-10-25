@@ -5,6 +5,7 @@ use Test::MockModule;
 use t::Examples;
 
 use SSAuthenticator;
+use SSAuthenticator::Config;
 
 
 subtest "Config timeout validation works", \&testConfigTimeoutValidation;
@@ -13,15 +14,15 @@ sub testConfigTimeoutValidation {
     my ($defaultConfTempFile);
 
     $defaultConfTempFile = t::Examples::writeBadConnectionTimeoutConf();
-    SSAuthenticator::setConfigFile($defaultConfTempFile->filename());
+    SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
-    ok(!SSAuthenticator::isConfigValid(), "not string as timeout value");
+    ok(!SSAuthenticator::Config::isConfigValid(), "not string as timeout value");
     rmConfig();
 
     $defaultConfTempFile = t::Examples::writeDefaultConf();
-    SSAuthenticator::setConfigFile($defaultConfTempFile->filename());
+    SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
-    ok(SSAuthenticator::isConfigValid(), "integer is valid timeout value");
+    ok(SSAuthenticator::Config::isConfigValid(), "integer is valid timeout value");
     rmConfig();
 }
 
@@ -42,7 +43,7 @@ sub makeConfigValid() {
 
 sub rmConfig {
     unlink "daemon.conf";
-    SSAuthenticator::unloadConfig();
+    SSAuthenticator::Config::unloadConfig();
 }
 
 sub getConfig {

@@ -7,9 +7,10 @@ use Test::MockModule;
 use t::Examples;
 
 use SSAuthenticator;
+use SSAuthenticator::Config;
 
 my $defaultConfTempFile = t::Examples::writeDefaultConf();
-SSAuthenticator::setConfigFile($defaultConfTempFile->filename());
+SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
 subtest "Manually inspect LEDs", \&ledInspection;
 sub ledInspection {

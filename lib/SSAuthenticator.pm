@@ -9,6 +9,9 @@ package SSAuthenticator;
 our $VERSION = "0.12";
 
 #Self-service authorization statuses
+#Statuses > 0 are success statuses
+#Statuses between -1 and -99 are user failure statuses
+#statuses <= -100 are software issues
 use constant {
     OK                => 1,
     ERR_UNDERAGE      => -1, #if below the allowed age for the given branch
@@ -18,7 +21,7 @@ use constant {
     ERR_NAUGHTY       => -5, #if the authorizing user has fines or debarments
     ERR_CLOSED        => -6, #if the library's self-service time is over for the day
     ERR_BADCARD       => -7, #if user's cardnumber is not know
-    ERR_NOTCACHED     => -8,
+    ERR_NOTCACHED     => -8, #
     ERR_ERR           => -100, #Server error
 };
 
@@ -36,24 +39,26 @@ use constant {
 
 =cut
 
-use POSIX qw(LC_MESSAGES LC_ALL);
 use Modern::Perl;
+
+use Scalar::Util qw(blessed);
+use POSIX qw(LC_MESSAGES LC_ALL);
 use Config::Simple;
-use DBM::Deep;
-use LWP::UserAgent;
-use HTTP::Request::Common;
 use JSON;
+use Data::Dumper;
 use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
-use Sys::Syslog qw(:standard :macros);
-use Systemd::Daemon qw{ -soft notify };
+use Log::Log4perl qw(:easy);
+use Systemd::Daemon;
 use OLED::Client;
 
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
 use GPIO;
-use API;
-use AutoConfigurer;
+use SSAuthenticator::API;
+use SSAuthenticator::Config;
+use SSAuthenticator::AutoConfigurer;
+use SSAuthenticator::DB;
 
 my %accessMsgs = (
                             #-----+++++-----+++++\n-----+++++-----+++++
@@ -67,40 +72,20 @@ my %accessMsgs = (
     ERR_CLOSED         , N__"   Library closed   ",
     ERR_BADCARD        , N__"Card not recognized ",
     ERR_NOTCACHED      , N__"   Network error    ",
-    ERR_ERR            , N__"   Strange error    ",
+    ERR_ERR            , N__"  Unexpected error  ",
     'CACHE_USED'      => N__" I Remembered you!  ",
     'CONTACT_LIBRARY' => N__"Contact your library",
 );
 
-
-sub getDB {
-    my $CARDNUMBER_FILE = "/var/cache/ssauthenticator/patron.db";
-    my $CARDNUMBER_DB = DBM::Deep->new($CARDNUMBER_FILE);
-    return $CARDNUMBER_DB;
-}
-
-my $config;
-my $configFile = "/etc/ssauthenticator/daemon.conf";
-sub setConfigFile {
-    my ($overloadedConfigFile) = @_;
-    $configFile = $overloadedConfigFile;
-}
-sub getConfig {
-    $config = new Config::Simple($configFile)
-    || die Config::Simple->error(), ".\n",
-    "Please check the syntax in /etc/ssauthenticator/daemon.conf."
-        unless $config;
-    return $config;
-}
-sub unloadConfig {
-    $config = undef;
+sub db {
+    return SSAuthenticator::DB::getDB();
 }
 
 my $leds = {};
 sub initLeds {
-    $leds->{red}   = GPIO->new(getConfig()->param('RedLEDPin'));
-    $leds->{green} = GPIO->new(getConfig()->param('GreenLEDPin'));
-    $leds->{blue}  = GPIO->new(getConfig()->param('BlueLEDPin'));
+    $leds->{red}   = GPIO->new(config()->param('RedLEDPin'));
+    $leds->{green} = GPIO->new(config()->param('GreenLEDPin'));
+    $leds->{blue}  = GPIO->new(config()->param('BlueLEDPin'));
 }
 sub ledOn {
     my ($colour) = @_;
@@ -117,7 +102,7 @@ sub ledOff {
 
 my $doorRelay;
 sub initDoor {
-    $doorRelay = GPIO->new(getConfig()->param('DoorPin'));
+    $doorRelay = GPIO->new(config()->param('DoorPin'));
 }
 sub doorOn {
     initDoor() unless $doorRelay;
@@ -166,13 +151,18 @@ sub _getOLEDMsg {
 sub isAuthorized {
     my ($cardNumber) = @_;
     my ($authorization, $cacheUsed) = canUseLibrary($cardNumber);
+    INFO "canUseLibrary() returns \$authorization=".($authorization || '').", \$cacheUsed=".($cacheUsed || '');
 
     my $open = isLibraryOpen();
+    INFO "isLibraryOpen() returns \$open=".($open || '');
     if ($authorization > 0 && not($open)) {
         $authorization = $open;
     }
 
-    updateCache($cardNumber, $authorization) unless ($cacheUsed); #Don't extend cache duration if there is a cache hit. Original date of checking is important
+    #Don't extend cache duration if there is a cache hit. Original date of checking is important
+    updateCache($cardNumber, $authorization)
+        if (not($cacheUsed) && $authorization != ERR_BADCARD && $authorization != ERR_ERR
+                            && $authorization != ERR_NOTCACHED);
 
     return ($authorization, $cacheUsed);
 }
@@ -193,25 +183,27 @@ sub canUseLibrary {
     my ($cardNumber) = @_;
 
     my $authorized;
-    my $cached;
+    my $cacheUsed;
 
     timeout_call(
         getTimeout(),
         sub {$authorized = isAuthorizedApi($cardNumber)}
     );
+    INFO "isAuthorizedApi() returns ".($authorized || '');
 
     # Check if we got response from REST API
     if (defined $authorized) {
-        return ($authorized, $cached);
+        return ($authorized, $cacheUsed);
     } else {
         $authorized = isAuthorizedCache($cardNumber);
+        INFO "isAuthorizedCache() returns ".($authorized || '');
 
         if ($authorized && $authorized != ERR_NOTCACHED) {
-            $cached = 1;
+            $cacheUsed = 1;
         }
     }
 
-    return ($authorized, $cached);
+    return ($authorized, $cacheUsed);
 }
 
 =head2 isAuthorizedApi
@@ -228,15 +220,23 @@ Connects to the Koha REST API to see if the cardnumber belongs to a well-behavin
 sub isAuthorizedApi {
     my ($cardNumber) = @_;
 
-    my $httpResponse = getApiResponse($cardNumber);
-    my $body = decodeContent($httpResponse);
-    my $status = $httpResponse->code() || '';
+    my $httpResponse = SSAuthenticator::API::getApiResponse($cardNumber);
+    my $body = $httpResponse ? decodeContent($httpResponse) : {};
+    my $err = $body->{error} || '';
+    my $permission = $body->{permission} || '';
+    my $status = $httpResponse ? $httpResponse->code() : '';
 
-    if ($status eq '404') {
+    if ($httpResponse && blessed($httpResponse) && $httpResponse->isa('HTTP::Response')) {
+        INFO "getApiResponse() returns a ".ref($httpResponse)." with \$status=$status, \$permission=$permission, \$err=$err";
+    }
+    else {
+        ERROR "getApiResponse() returns '".($httpResponse || '')."' instead of a HTTP:Response-object!!";
+    }
+
+    if ($status eq 404) {
         return ERR_BADCARD;
     }
-    elsif (exists $body->{error}) {
-        my $err = $body->{error};
+    elsif ($status eq 200 && $err) {
         return ERR_UNDERAGE if $err eq 'Koha::Exception::SelfService::Underage';
         return ERR_SSTAC    if $err eq 'Koha::Exception::SelfService::TACNotAccepted';
         return ERR_BBC      if $err eq 'Koha::Exception::SelfService::BlockedBorrowerCategory';
@@ -244,19 +244,19 @@ sub isAuthorizedApi {
         return ERR_NAUGHTY  if $err eq 'Koha::Exception::SelfService';
         return ERR_ERR;
     }
-    elsif (exists $body->{permission}) {
-        return $body->{permission} eq 'true' ? OK : ERR_ERR;
-    } else {
-        syslog(LOG_ERR, "REST API is not working as expected. ".
-                        "Maybe it is misconfigured?");
-        return undef; #For some reason server doesn't respond. Fall back to using cache.
+    elsif ($status eq 200 && $permission) {
+        return $permission ? OK : ERR_ERR;
     }
+
+    ERROR "isAuthorizedApi() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response";
+    return undef; #For some reason server doesn't respond. Fall back to using cache.
 }
 
 sub decodeContent {
     my ($response) = @_;
 
     my $responseContent = $response->decoded_content;
+    INFO "decodeContent() \$responseContent=$responseContent";
 
     if ($responseContent) {
         return JSON::decode_json $responseContent;
@@ -265,36 +265,8 @@ sub decodeContent {
     }
 }
 
-sub getApiResponse {
-    my ($cardNumber) = @_;
-
-    my $requestUrl = getConfig()->param('ApiBaseUrl') . "/borrowers/ssstatus";
-
-    my $ua = LWP::UserAgent->new;
-    my $userId = getConfig()->param("ApiUserName");
-    my $apiKey = getConfig()->param("ApiKey");
-    my $authHeaders = API::prepareAuthenticationHeaders($userId,
-                            undef,
-                            "GET",
-                            $apiKey);
-
-    my $date = $authHeaders->{'X-Koha-Date'};
-    my $authorization = $authHeaders->{'Authorization'};
-
-    my $request = HTTP::Request->new(GET => $requestUrl);
-    $request->header('X-Koha-Date' => $date);
-    $request->header('Authorization' => $authorization);
-    $request->header('Content-Type' => 'application/x-www-form-urlencoded');
-    $request->header('Content-Length' => length('cardnumber='.$cardNumber));
-    $request->content('cardnumber='.$cardNumber);
-
-    my $response = $ua->request($request);
-
-    return $response;
-}
-
 sub isLibraryOpen {
-    my $libraryName = getConfig()->param('LibraryName');
+    my $libraryName = config()->param('LibraryName');
     # TODO:
     # Request data from API and fallback to cache if not possible
     return 1 if 1;
@@ -303,10 +275,12 @@ sub isLibraryOpen {
 
 sub isAuthorizedCache {
     my ($cardNumber) = @_;
-    if (getDB()->exists($cardNumber)) {
-        my $patronInfo = getDB()->get($cardNumber);
+    if (db()->exists($cardNumber)) {
+        my $patronInfo = db()->get($cardNumber);
+        DEBUG "isAuthorizedCache() \$cardNumber=$cardNumber exists and has \$status=".$$patronInfo{access};
         return $$patronInfo{access};
     } else {
+        DEBUG "isAuthorizedCache() \$cardNumber=$cardNumber not cached";
         return ERR_NOTCACHED;
     }
 }
@@ -332,7 +306,7 @@ sub playDenyAccessBuzz {
 }
 sub playRTTTL {
     my ($song) = @_;
-    system('rtttl-player','-p',getConfig()->param('RTTTL-PlayerPin'),'-o',"song-$song");
+    system('rtttl-player','-p',config()->param('RTTTL-PlayerPin'),'-o',"song-$song");
     if ($? == -1) {
         warn "failed to execute: $!\n";
     }
@@ -354,11 +328,10 @@ sub denyAccess {
     ledOff('red');
 }
 
+my $defaultTimeout = 3000;
 sub getTimeout() {
-    my $defaultTimeout = 3000;
-
-    if (getConfig()->param('ConnectionTimeout')) {
-        return millisecs2secs(getConfig()->param('ConnectionTimeout'));
+    if (config()->param('ConnectionTimeout')) {
+        return millisecs2secs(config()->param('ConnectionTimeout'));
     } else {
         return millisecs2secs($defaultTimeout);
     }
@@ -369,49 +342,16 @@ sub millisecs2secs {
     return $milliseconds / 1000;
 }
 
-sub isConfigValid() {
-    my $returnValue = 1;
-
-    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'RTTTL-PlayerPin');
-    foreach my $param (@params) {
-        if (!getConfig()->param($param)) {
-            notifyAboutError("$param not defined in daemon.conf");
-            $returnValue = 0;
-        }
-    }
-
-    my $timeout = getConfig()->param("ConnectionTimeout");
-    if (!$timeout) {
-        return $returnValue;
-    } elsif (!($timeout =~ /\d+/)) {
-        my $reason = "ConnectionTimeout value is invalid. " .
-            "Valid value is an integer.";
-        notifyAboutError($reason);
-        $returnValue = 0;
-    } elsif ($timeout > 30000) {
-        my $reason = "ConnectionTimeout value is too big. Max 30000 ms";
-        notifyAboutError($reason);
-        $returnValue = 0;
-    }
-
-    return $returnValue;
-}
-
-sub notifyAboutError {
-    my ($reason) = @_;
-    say $reason;
-    syslog(LOG_ERR, $reason);
-}
-
 sub updateCache {
     my ($cardNumber, $authStatus) = @_;
-    getDB()->put($cardNumber, {time => localtime,
+    DEBUG "updateCache() $cardNumber cached using \$authStatus=$authStatus";
+    db()->put($cardNumber, {time => localtime,
                         access => $authStatus});
 }
 
 sub removeFromCache {
     my ($cardNumber) = @_;
-    getDB()->delete($cardNumber);
+    db()->delete($cardNumber);
 }
 
 sub controlAccess {
@@ -425,29 +365,22 @@ sub controlAccess {
     }
 }
 
-sub exitWithReason {
-    my ($reason) = @_;
-    notifyAboutError($reason);
-    exit(1);
-}
-
 sub getBarcodeSeparator {
     # TODO: Check if param exists before comparing.
-    my $conf = getConfig();
+    my $conf = config();
     if ($conf->param('CarriageReturnAsSeparator') && $conf->param('CarriageReturnAsSeparator') eq "true") {
-        syslog(LOG_INFO, "using \\r as barcode separator");
+        INFO "using \\r as barcode separator";
         return "\r";
     } else {
-        syslog(LOG_INFO, "using \\n as barcode separator");
+        INFO "using \\n as barcode separator";
         return "\n";
     }
 }
 
 sub configureBarcodeScanner {
-    my $configurer = AutoConfigurer->new;
+    my $configurer = SSAuthenticator::AutoConfigurer->new;
     $configurer->configure();
-    syslog(LOG_INFO, "Barcode scanner configured");
-    say "Barcode scanner configured";
+    INFO "Barcode scanner configured";
 }
 
 =head2 changeLanguage
@@ -464,19 +397,42 @@ sub changeLanguage {
     POSIX::setlocale(LC_ALL, "$lang.$encoding");
 }
 
+sub config {
+    return SSAuthenticator::Config::getConfig();
+}
+
+sub openLogger {
+    my ($verbose) = @_;
+    Log::Log4perl->easy_init($ERROR) && return if not($verbose);
+    Log::Log4perl->easy_init($FATAL) && return if $verbose == -1;
+    Log::Log4perl->easy_init($INFO) && return if $verbose == 1;
+    Log::Log4perl->easy_init($DEBUG) && return if $verbose == 2;
+}
+
+sub setDefaultLanguage {
+    changeLanguage(
+        config()->param('DefaultLanguage'),
+        'UTF-8',
+    );
+    INFO "setDefaultLanguage() ".config()->param('DefaultLanguage');
+}
+
 sub main {
-    if (!isConfigValid()) {
-        exitWithReason("/etc/ssauthenticator/daemon.conf is invalid");
+    openLogger( config()->param('Verbose') );
+
+    if (!SSAuthenticator::Config::isConfigValid()) {
+        ERROR "/etc/ssauthenticator/daemon.conf is invalid";
+        exit(1);
     }
 
-    configureBarcodeScanner();
+    setDefaultLanguage();
+    #configureBarcodeScanner();
 
     local $/ = getBarcodeSeparator();
 
-    syslog(LOG_INFO, "Entering main loop");
-    say "Entering main loop";
+    INFO "main() Entering main loop";
     while (1) {
-        notify(WATCHDOG => 1);
+        Systemd::Daemon::notify(WATCHDOG => 1);
         my $device;
         ##Sometimes the barcode scanner can disappear and reappear during/after configuration. Try to find a barcode scanner handle
         for (my $tries=0 ; $tries < 10 ; $tries++) {
@@ -484,7 +440,7 @@ sub main {
             last if $device;
             sleep 1;
         }
-        exitWithReason("No barcode reader attached") unless $device;
+        ERROR "main() No barcode reader attached" && exit(1) unless $device;
         my $cardNumber = "";
         if (timeout_call(
             30,
@@ -494,13 +450,14 @@ sub main {
         }
         if ($cardNumber) {
             chomp($cardNumber);
-            syslog(LOG_INFO, "Read barcode '$cardNumber'");
-            say "Read barcode '$cardNumber'";
+            INFO "main() Read barcode '$cardNumber'";
 
             controlAccess($cardNumber);
         }
         close $device; # Clears buffer
     }
+
+    closelog();
 }
 
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SSAuthenticator 0.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-24 17:27+0300\n"
+"POT-Creation-Date: 2016-10-25 14:04+0300\n"
 "PO-Revision-Date: 2016-10-06 14:28+0300\n"
 "Last-Translator: Olli-Antti Kivilahti <olli-antti.kivilahti@jns.fi>\n"
 "Language-Team: Finnish\n"
@@ -17,64 +17,68 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/SSAuthenticator.pm:60
-#, fuzzy
-msgid "   Access granted   "
-msgstr "Paasy sallittu"
-
-#: lib/SSAuthenticator.pm:61
-#, fuzzy
-msgid "   Access denied    "
-msgstr "Paasy evatty"
-
 #: lib/SSAuthenticator.pm:62
-msgid "     Age limit      "
-msgstr ""
+msgid "   Access granted   "
+msgstr "   Paasy sallittu   "
 
 #: lib/SSAuthenticator.pm:63
+msgid "   Access denied    "
+msgstr "    Paasy evatty    "
+
+#: lib/SSAuthenticator.pm:64
+msgid "     Age limit      "
+msgstr "     Ikarajaus      "
+
+#: lib/SSAuthenticator.pm:65
 msgid ""
 " Terms & Conditions \n"
 "    not accepted    "
 msgstr ""
+"Kayttoehtoja ei ole \n"
+"     hyvaksytty     "
 
-#: lib/SSAuthenticator.pm:64
+#: lib/SSAuthenticator.pm:66
 msgid ""
 "   Wrong borrower   \n"
 "      category      "
-msgstr ""
+msgstr "  Vaara asiakaslaji "
 
-#: lib/SSAuthenticator.pm:65
+#: lib/SSAuthenticator.pm:67
 msgid ""
 " Self-service usage \n"
 " permission revoked "
 msgstr ""
+" Omatoimikirjaston  \n"
+"   kaytto estetty   "
 
-#: lib/SSAuthenticator.pm:66
+#: lib/SSAuthenticator.pm:68
 msgid ""
 " Circulation rules  \n"
 "    not followed    "
 msgstr ""
-
-#: lib/SSAuthenticator.pm:67
-msgid "   Library closed   "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:68
-msgid "Card not recognized "
-msgstr ""
+" Kayttajatilillanne \n"
+"on jotain omituista "
 
 #: lib/SSAuthenticator.pm:69
-msgid "   Network error    "
-msgstr ""
+msgid "   Library closed   "
+msgstr "Kirjasto on suljettu"
 
 #: lib/SSAuthenticator.pm:70
-msgid "   Strange error    "
-msgstr ""
+msgid "Card not recognized "
+msgstr " Tuntematon kortti  "
 
 #: lib/SSAuthenticator.pm:71
-msgid " I Remembered you!  "
-msgstr ""
+msgid "   Network error    "
+msgstr "Verkkoyhteysongelma "
 
 #: lib/SSAuthenticator.pm:72
+msgid  "  Unexpected error  "
+msgstr " Odottamaton virhe  "
+
+#: lib/SSAuthenticator.pm:73
+msgid " I Remembered you!  "
+msgstr "   Muistin sinut!   "
+
+#: lib/SSAuthenticator.pm:74
 msgid "Contact your library"
-msgstr ""
+msgstr " Kysy lisaa meilta  "

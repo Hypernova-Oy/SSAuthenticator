@@ -6,7 +6,7 @@
 #
 
 use Test::More tests => 2;
-use API;
+use SSAuthenticator::API;
 
 subtest "Make signature", \&testSignatureMaking;
 sub testSignatureMaking {
@@ -21,7 +21,7 @@ sub testSignatureMaking {
 	second     => 13,
 	);
     my $apiKey = "F12312mp3K123kljkar";
-    is(API::makeSignature($method, $userid, $headerXKohaDate, $apiKey),
+    is(SSAuthenticator::API::_makeSignature($method, $userid, $headerXKohaDate, $apiKey),
        "f74a83dad4233747b29ec575482f8e8921dcfc0b4e0891c5792d4a78078ccf8d",
        "signature making");
 }
@@ -41,7 +41,7 @@ sub testprepareAuthenticationHeaders {
 	second     => 13,
 	);
     my $apiKey = "F12312mp3K123kljkar";
-    my $authHeaders = API::prepareAuthenticationHeaders($userid,
+    my $authHeaders = SSAuthenticator::API::_prepareAuthenticationHeaders($userid,
 							$headerXKohaDate,
 							$method,
 							$apiKey);

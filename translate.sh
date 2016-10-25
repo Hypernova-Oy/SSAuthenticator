@@ -12,9 +12,11 @@ textdomain="SSAuthenticator"
 # Define character encoding, programming language, output file
 # Define the extractable string keywords
 # Define source code files to include in this output file
+mkdir -p po
+translateableFiles=$(find lib/ -iname '*.pm')
 xgettext --from-code=UTF-8 -L Perl -o po/$textdomain.pot \
     -k -k__ -k\$__ -k%__ -k__x -k__n:1,2 -k__nx:1,2 -k__xn:1,2 -kN__ \
-    lib/*
+    $translateableFiles
 
 #2. Update old translation files
 msgmerge po/$lang.po po/$textdomain.pot -o po/$lang.po

@@ -10,8 +10,20 @@ use Test::MockModule;
 use t::Examples;
 
 use SSAuthenticator;
+use SSAuthenticator::Config;
+
 my $defaultConfTempFile = t::Examples::writeDefaultConf();
-SSAuthenticator::setConfigFile($defaultConfTempFile->filename());
+SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
+
+
+=head2 Trouble?
+
+Try running
+    bash -x translate.sh
+to create the translations and update them after modifying the .po-files afterwards.
+
+=cut
+
 
 subtest "Translations fi_FI", \&translationsFi_FI;
 sub translationsFi_FI {
@@ -21,11 +33,11 @@ sub translationsFi_FI {
 
     $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::OK, 0 );
     is($arr->[0],
-       'Paasy sallittu');
+       '   Paasy sallittu   ');
 
     $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::ERR_REVOKED, 0 );
     is($arr->[0],
-       'Paasy evatty');
+       '    Paasy evatty    ');
 }
 
 subtest "Translations en_GB", \&translationsEn_GB;
@@ -36,11 +48,11 @@ sub translationsEn_GB {
 
     $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::OK, 0 );
     is($arr->[0],
-       'Access granted');
+       '   Access granted   ');
 
     $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::ERR_REVOKED, 0 );
     is($arr->[0],
-       'Access denied');
+       '   Access denied    ');
 }
 
 t::Examples::rmConfig();

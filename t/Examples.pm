@@ -10,7 +10,9 @@ use Modern::Perl;
 
 use File::Temp;
 
-use SSAuthenticator;
+
+use SSAuthenticator::Config;
+use SSAuthenticator::DB;
 
 my $tempConfFile;
 sub _writeTempConf {
@@ -35,6 +37,8 @@ BlueLEDPin 27
 RedLEDPin 17
 DoorPin 25
 RTTTL-PlayerPin 1
+Verbose 0
+ConnectionTimeout 1
 
 CONF
 }
@@ -51,7 +55,19 @@ sub writeBadConnectionTimeoutConf {
 
 sub rmConfig {
     $tempConfFile->DESTROY();
-    SSAuthenticator::unloadConfig();
+    SSAuthenticator::Config::unloadConfig();
+}
+
+
+sub createCacheDB {
+    open(my $fh, ">", "patron.db");
+    print $fh "";
+    close $fh;
+    SSAuthenticator::DB::setDB("patron.db");
+}
+
+sub rmCacheDB {
+    unlink "patron.db";
 }
 
 1;

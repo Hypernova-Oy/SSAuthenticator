@@ -5,7 +5,7 @@
 # This file is part of SSAuthenticator.
 #
 
-package AutoConfigurer;
+package SSAuthenticator::AutoConfigurer;
 
 use Modern::Perl;
 use Sys::Syslog qw(:standard :macros);
@@ -36,14 +36,14 @@ sub configure {
 
 sub configureSettings {
     my ($self) = @_;
-    logMessage("Configuring scanner's settings");
+    syslog(LOG_INFO, "Configuring scanner's settings");
     setTerminatorToLF($self);
     setCrossHair($self);
     setAutomaticOperatingMode($self);
 }
 sub saveAndExitServiceMode {
     my ($self) = @_;
-    logMessage("saving scanner's settings and entering normal mode");
+    syslog(LOG_INFO, "saving scanner's settings and entering normal mode");
     my $scanner = $self->{scanner};
 
     writeCmd($self, "\$Ar\r");
@@ -60,19 +60,19 @@ sub isDataWritten {
 
 sub setTerminatorToLF {
     my ($self) = @_;
-    logMessage("Setting scanner's LF character to \\n");
+    syslog(LOG_INFO, "Setting scanner's LF character to \\n");
     writeCmd($self, "\$CLFSU0A00000000000000000000000000000000000000\r");
 }
 
 sub setCrossHair {
     my ($self) = @_;
-    logMessage("Setting scanner's crosshair");
+    syslog(LOG_INFO, "Setting scanner's crosshair");
     writeCmd($self, "\$FA03760240\r");
 }
 
 sub setAutomaticOperatingMode {
     my ($self) = @_;
-    logMessage("Setting 'automatic' operating mode");
+    syslog(LOG_INFO, "Setting 'automatic' operating mode");
     writeCmd($self, "\$CSNRM02\r");
 }
 sub writeCmd {
@@ -85,10 +85,10 @@ sub writeCmd {
 
 sub setDeviceToServiceMode {
     my ($self) = @_;
-    logMessage("Setting scanner to service mode");
+    syslog(LOG_INFO, "Setting scanner to service mode");
     sendServiceModeSignal($self);
 
-    logMessage("Setting baudrate for service mode");
+    syslog(LOG_INFO, "Setting baudrate for service mode");
     $self->{scanner}->baudrate(115200);
 }
 
@@ -110,15 +110,10 @@ sub exitWithReason {
     exit(1);
 }
 
-sub logMessage {
-    my ($message) = @_;
-    say $message;
-}
-
 sub main {
     my $configurer = AutoConfigurer->new;
     $configurer->configure();
-    logMessage("Device configured succesfully!");
+    syslog(LOG_INFO, "Device configured succesfully!");
 }
 
 __PACKAGE__->main() unless caller;
