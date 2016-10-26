@@ -1,2 +1,0 @@
-udev/50-library.rules lib/udev/rules.d
-etc/daemon.conf /etc/authenticator

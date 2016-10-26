@@ -4,8 +4,7 @@ Description=Library access control module
 [Service]
 Type=idle
 User=root
-WorkingDirectory=/usr/local/share/perl/5.20.2/
-ExecStart=/usr/bin/perl SSAuthenticator.pm
+ExecStart=/usr/local/bin/ssauthenticator
 
 RestartSec=5s
 WatchdogSec=35s

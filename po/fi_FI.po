@@ -155,7 +155,7 @@ msgstr "    Olet huippu!    "
 
 #: lib/SSAuthenticator/Greetings.pm:30
 msgid  "I like you already. "
-msgstr "Tykkaan jos sinusta!"
+msgstr "Tykkaan jo sinusta! "
 
 #: lib/SSAuthenticator/Greetings.pm:31
 msgid  "Our place is great. "
