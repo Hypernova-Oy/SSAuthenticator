@@ -31,11 +31,11 @@ sub translationsFi_FI {
     SSAuthenticator::changeLanguage('fi_FI', 'UTF-8');
     my $arr;
 
-    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::OK, 0 );
+    $arr = SSAuthenticator::_getAccessMsg( SSAuthenticator::OK, 0 );
     is($arr->[0],
        '   Paasy sallittu   ');
 
-    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::ERR_REVOKED, 0 );
+    $arr = SSAuthenticator::_getAccessMsg( SSAuthenticator::ERR_REVOKED, 0 );
     is($arr->[0],
        '    Paasy evatty    ');
 }
@@ -46,11 +46,11 @@ sub translationsEn_GB {
     SSAuthenticator::changeLanguage('en_GB', 'UTF-8');
     my $arr;
 
-    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::OK, 0 );
+    $arr = SSAuthenticator::_getAccessMsg( SSAuthenticator::OK, 0 );
     is($arr->[0],
        '   Access granted   ');
 
-    $arr = SSAuthenticator::_getOLEDMsg( SSAuthenticator::ERR_REVOKED, 0 );
+    $arr = SSAuthenticator::_getAccessMsg( SSAuthenticator::ERR_REVOKED, 0 );
     is($arr->[0],
        '   Access denied    ');
 }

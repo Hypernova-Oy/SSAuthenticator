@@ -59,9 +59,11 @@ use SSAuthenticator::API;
 use SSAuthenticator::Config;
 use SSAuthenticator::AutoConfigurer;
 use SSAuthenticator::DB;
+use SSAuthenticator::Greetings;
 
-my %accessMsgs = (
-                            #-----+++++-----+++++\n-----+++++-----+++++
+my %messages = (
+                            #-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++
+    ##ACCESS MESSAGES
     OK                 , N__"   Access granted   ", # '=>' quotes the key automatically, use ',' to not quote the constants to strings
     'ACCESS_DENIED'   => N__"   Access denied    ",
     ERR_UNDERAGE       , N__"     Age limit      ",
@@ -75,6 +77,11 @@ my %accessMsgs = (
     ERR_ERR            , N__"  Unexpected error  ",
     'CACHE_USED'      => N__" I Remembered you!  ",
     'CONTACT_LIBRARY' => N__"Contact your library",
+
+    ##INITIALIZATION MESSAGES
+    'INITING_STARTING'  => N__"  I am waking up.   \nPlease wait a moment\nWhile I check I have\n everything I need. ",
+    'INITING_ERROR'     => N__" I have failed you  \n  I am not working  \nPlease contact your \n      library       ",
+    'INITING_FINISHED'  => N__"   I am complete    \n   Please use me.   ",
 );
 
 sub db {
@@ -115,29 +122,56 @@ sub doorOff {
     return 1;
 }
 
-my $display = OLED::Client->new();
-sub showOLEDMsg {
+sub showAccessMsg {
     my ($authorization, $cacheUsed) = @_;
     return 0 unless(defined($authorization));
 
+    return showOLEDMsg(  _getAccessMsg($authorization, $cacheUsed)  );
+}
+
+sub showInitializingMsg {
+    my ($type) = @_;
+    return showOLEDMsg(  [split("\n", __($messages{"INITING_$type"}))]  );
+}
+
+=head2 showOLEDMsg
+
+@PARAM1 ARRAYRef of String, 20-character-long messages.
+
+=cut
+
+my $display = OLED::Client->new();
+sub showOLEDMsg {
+    my ($msgs) = @_;
+
     my $err;
-    my $msg = _getOLEDMsg($authorization, $cacheUsed);
-    for (my $i=0 ; $i<scalar(@$msg) ; $i++) {
-        my $rv = $display->printRow($i, $msg->[$i]);
+    #Prevent printing more than the screen can handle
+    my $rows = scalar(@$msgs);
+    $rows = 4 if $rows > 4;
+
+    for (my $i=0 ; $i<$rows ; $i++) {
+        my $rv = $display->printRow($i, $msgs->[$i]);
         $err = 1 unless ($rv =~ /^200/);
     }
     $display->endTransaction();
 
     return $err ? 0 : 1;
 }
-sub _getOLEDMsg {
+
+sub _getAccessMsg {
     my ($authorization, $cacheUsed) = @_;
 
     my @msg;
-    push(@msg, split("\n", __($accessMsgs{'ACCESS_DENIED'}))) if $authorization < 0;
-    push(@msg, split("\n", __($accessMsgs{$authorization})));
-    push(@msg, split("\n", __($accessMsgs{'CONTACT_LIBRARY'}))) if $authorization < 0;
-    push(@msg, split("\n", __($accessMsgs{'CACHE_USED'}))) if $cacheUsed;
+    push(@msg, split("\n", __($messages{'ACCESS_DENIED'}))) if $authorization < 0;
+    push(@msg, split("\n", __($messages{$authorization})));
+    push(@msg, split("\n", __($messages{'CONTACT_LIBRARY'}))) if $authorization < 0;
+    push(@msg, split("\n", __($messages{'CACHE_USED'}))) if $cacheUsed;
+
+    if ($authorization > 0) { #Only print a happy-happy-joy-joy message on success ;)
+        my $happyHappyJoyJoy = SSAuthenticator::Greetings::random();
+        push(@msg, split("\n", __($happyHappyJoyJoy))) if $happyHappyJoyJoy;
+    }
+
     return \@msg;
 }
 
@@ -291,7 +325,7 @@ sub grantAccess {
     doorOn();
     ledOn('green');
 
-    showOLEDMsg($authorization, $cacheUsed);
+    showAccessMsg($authorization, $cacheUsed);
     playAccessBuzz();
 
     ledOff('green');
@@ -323,7 +357,7 @@ sub denyAccess {
     my ($authorization, $cacheUsed) = @_;
 
     ledOn('red');
-    showOLEDMsg($authorization, $cacheUsed);
+    showAccessMsg($authorization, $cacheUsed);
     playDenyAccessBuzz();
     ledOff('red');
 }
@@ -420,17 +454,25 @@ sub setDefaultLanguage {
 sub main {
     openLogger( config()->param('Verbose') );
 
-    if (!SSAuthenticator::Config::isConfigValid()) {
-        ERROR "/etc/ssauthenticator/daemon.conf is invalid";
+    local $/ = getBarcodeSeparator();
+
+    showInitializingMsg('STARTING'); sleep 2;
+    eval {
+        if (!SSAuthenticator::Config::isConfigValid()) {
+            die("Config file ".SSAuthenticator::Config::getConfigFile()." is invalid");
+        }
+
+        setDefaultLanguage();
+        configureBarcodeScanner();
+    };
+    if ($@) {
+        FATAL "$@";
+        showInitializingMsg('ERROR');
         exit(1);
     }
 
-    setDefaultLanguage();
-    #configureBarcodeScanner();
-
-    local $/ = getBarcodeSeparator();
-
     INFO "main() Entering main loop";
+    showInitializingMsg('FINISHED');
     while (1) {
         Systemd::Daemon::notify(WATCHDOG => 1);
         my $device;

@@ -35,6 +35,11 @@ sub getConfig {
         unless $config;
     return $config;
 }
+
+sub getConfigFile {
+    return $configFile;
+}
+
 sub unloadConfig {
     $config = undef;
 }
@@ -43,7 +48,7 @@ sub unloadConfig {
 sub isConfigValid() {
     my $returnValue = 1;
 
-    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'RTTTL-PlayerPin', 'Verbose');
+    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance', 'DefaultLanguage');
     foreach my $param (@params) {
         if (not(defined(getConfig()->param($param)))) {
             ERROR "$param not defined in daemon.conf";

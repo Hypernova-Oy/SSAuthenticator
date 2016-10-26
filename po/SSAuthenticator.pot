@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-25 14:04+0300\n"
+"POT-Creation-Date: 2016-10-26 10:43+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,62 +17,140 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: lib/SSAuthenticator.pm:62
+#: lib/SSAuthenticator.pm:67
 msgid "   Access granted   "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:63
+#: lib/SSAuthenticator.pm:68
 msgid "   Access denied    "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:64
+#: lib/SSAuthenticator.pm:69
 msgid "     Age limit      "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:65
+#: lib/SSAuthenticator.pm:70
 msgid ""
 " Terms & Conditions \n"
 "    not accepted    "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:66
+#: lib/SSAuthenticator.pm:71
 msgid ""
 "   Wrong borrower   \n"
 "      category      "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:67
+#: lib/SSAuthenticator.pm:72
 msgid ""
 " Self-service usage \n"
 " permission revoked "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:68
+#: lib/SSAuthenticator.pm:73
 msgid ""
 " Circulation rules  \n"
 "    not followed    "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:69
+#: lib/SSAuthenticator.pm:74
 msgid "   Library closed   "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:70
+#: lib/SSAuthenticator.pm:75
 msgid "Card not recognized "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:71
+#: lib/SSAuthenticator.pm:76
 msgid "   Network error    "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:72
-msgid "   Strange error    "
+#: lib/SSAuthenticator.pm:77
+msgid "  Unexpected error  "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:73
+#: lib/SSAuthenticator.pm:78
 msgid " I Remembered you!  "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:74
+#: lib/SSAuthenticator.pm:79
 msgid "Contact your library"
+msgstr ""
+
+#: lib/SSAuthenticator.pm:82
+msgid ""
+"  I am waking up.   \n"
+"Please wait a moment\n"
+"While I check I have\n"
+" everything I need. "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:83
+msgid ""
+" I have failed you  \n"
+"  I am not working  \n"
+"Please contact your \n"
+"      library       "
+msgstr ""
+
+#: lib/SSAuthenticator.pm:84
+msgid ""
+"   I am complete    \n"
+"   Please use me.   "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:21
+msgid "   Welcome again!   "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:22
+msgid "Thanks for visiting."
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:23
+msgid "   See you soon!    "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:24
+msgid " I aim to please ;) "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:25
+msgid "I hope you like us! "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:26
+msgid " Enjoy our library. "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:27
+msgid "     Have fun!   :) "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:28
+msgid "     Take care!     "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:29
+msgid " You are the best!  "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:30
+msgid "I like you already. "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:31
+msgid "Our place is great. "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:32
+msgid "Please remember me! "
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:33
+msgid "<3 <3 <3 <3 <3 <3 <3"
+msgstr ""
+
+#: lib/SSAuthenticator/Greetings.pm:34
+msgid "I am but a robot ..."
 msgstr ""

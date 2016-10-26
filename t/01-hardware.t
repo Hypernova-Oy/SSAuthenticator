@@ -49,7 +49,7 @@ sub beeperInspection {
 subtest "Manually inspect OLED display.", \&OLEDInspection;
 sub OLEDInspection {
     print "You should see the 'Display test' message\n";
-    ok(SSAuthenticator::showOLEDMsg( SSAuthenticator::OK, 1 ), "OLED display works");
+    ok(SSAuthenticator::showAccessMsg( SSAuthenticator::OK, 1 ), "OLED display works");
 }
 
 t::Examples::rmConfig();

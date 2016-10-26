@@ -16,7 +16,7 @@ sub new {
     my $self = {};
 
     $self->{scanner} = new Device::SerialPort ("/dev/barcodescanner", 1)
-	|| exitWithReason("No barcodescanner detected");
+	|| die("No barcodescanner detected");
     $self->{scanner}->baudrate(9600);
     $self->{scanner}->parity("odd");
     $self->{scanner}->databits(8);
@@ -31,7 +31,7 @@ sub configure {
     configureSettings($self);
     saveAndExitServiceMode($self);
     $self->{scanner}->close()
-	|| exitWithReason("closing barcode scanner failed");
+	|| die("closing barcode scanner failed");
 }
 
 sub configureSettings {
@@ -78,7 +78,7 @@ sub setAutomaticOperatingMode {
 sub writeCmd {
     my ($self, $cmd) = @_;
     if (!isDataWritten($self->{scanner}->write($cmd), $cmd)) {
-        exitWithReason("Data not written");
+        die("Data '$cmd' not written");
     }
     sleep 1;
 }
@@ -96,18 +96,6 @@ sub sendServiceModeSignal {
     my ($self) = @_;
     writeCmd($self, "\$S\r");
     sleep 3;
-}
-
-sub notifyAboutError {
-    my ($reason) = @_;
-    say $reason;
-    syslog(LOG_ERR, $reason);
-}
-
-sub exitWithReason {
-    my ($reason) = @_;
-    notifyAboutError($reason);
-    exit(1);
 }
 
 sub main {

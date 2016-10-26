@@ -37,7 +37,8 @@ sub haisuliRedemption {
     SSAuthenticator::changeLanguage('en_GB', 'UTF-8');
 
     t::Examples::createCacheDB();
-    t::Examples::writeDefaultConf();
+    my $defaultConfTempFile = t::Examples::writeDefaultConf();
+    SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
     $ssAuthenticatorApiMockModule = Test::MockModule->new('SSAuthenticator::API');
     $ssAuthenticatorApiMockModule->mock('getApiResponse', \&getApiResponseMock);
@@ -135,7 +136,7 @@ sub readBarcode {
         is($authStatus, $respTest->{assert_authStatus},
            "Auth status $authStatus");
 
-        my $msg = SSAuthenticator::_getOLEDMsg($authStatus, $cacheUsed);
+        my $msg = SSAuthenticator::_getAccessMsg($authStatus, $cacheUsed);
         $msg = join("\n", @$msg);
         ok($msg =~ /$respTest->{assert_oledMsgContains}/gsmi,
            "Got the expected OLED-message");

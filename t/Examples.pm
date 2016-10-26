@@ -39,6 +39,7 @@ DoorPin 25
 RTTTL-PlayerPin 1
 Verbose 0
 ConnectionTimeout 1
+RandomGreetingChance 50
 
 CONF
 }
