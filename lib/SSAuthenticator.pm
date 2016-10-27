@@ -49,7 +49,6 @@ use Data::Dumper;
 use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
 use Log::Log4perl qw(:easy);
-use Systemd::Daemon;
 use OLED::Client;
 
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
@@ -474,7 +473,6 @@ sub main {
     INFO "main() Entering main loop";
     showInitializingMsg('FINISHED');
     while (1) {
-        Systemd::Daemon::notify(WATCHDOG => 1);
         my $device;
         ##Sometimes the barcode scanner can disappear and reappear during/after configuration. Try to find a barcode scanner handle
         for (my $tries=0 ; $tries < 10 ; $tries++) {

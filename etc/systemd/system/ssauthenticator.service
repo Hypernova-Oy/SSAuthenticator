@@ -7,7 +7,6 @@ User=root
 ExecStart=/usr/local/bin/ssauthenticator
 
 RestartSec=5s
-WatchdogSec=35s
 Restart=always
 
 PrivateTmp=yes
