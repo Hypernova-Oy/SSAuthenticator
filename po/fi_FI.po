@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SSAuthenticator 0.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-26 10:43+0300\n"
+"POT-Creation-Date: 2016-10-28 17:21+0300\n"
 "PO-Revision-Date: 2016-10-06 14:28+0300\n"
 "Last-Translator: Olli-Antti Kivilahti <olli-antti.kivilahti@jns.fi>\n"
 "Language-Team: Finnish\n"
@@ -17,73 +17,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/SSAuthenticator.pm:67
-msgid "   Access granted   "
-msgstr "   Paasy sallittu   "
-
-#: lib/SSAuthenticator.pm:68
-msgid "   Access denied    "
-msgstr "    Paasy evatty    "
-
-#: lib/SSAuthenticator.pm:69
 msgid "     Age limit      "
 msgstr "     Ikarajaus      "
 
-#: lib/SSAuthenticator.pm:70
-msgid ""
-" Terms & Conditions \n"
-"    not accepted    "
-msgstr ""
-"Kayttoehtoja ei ole \n"
-"     hyvaksytty     "
+msgid "     Have fun!   :) "
+msgstr "  Pida hauskaa   :) "
 
-#: lib/SSAuthenticator.pm:71
+msgid "     Take care!     "
+msgstr "    Pida huolta!    "
+
+msgid "   Access denied    "
+msgstr "    Paasy evatty    "
+
+msgid "   Access granted   "
+msgstr "   Paasy sallittu   "
+
+msgid ""
+"   I am complete    \n"
+"   Please use me.   "
+msgstr ""
+"  Olen kokonainen.  \n"
+"  Tule kayttamaan   \n"
+"       minua!       "
+
+msgid "   Library closed   "
+msgstr "Kirjasto on suljettu"
+
+msgid "   Network error    "
+msgstr "Verkkoyhteysongelma "
+
+msgid "   See you soon!    "
+msgstr "   Nahdaan pian!    "
+
+msgid "   Welcome again!   "
+msgstr "Tervetuloa uudestaan"
+
 msgid ""
 "   Wrong borrower   \n"
 "      category      "
 msgstr "  Vaara asiakaslaji "
 
-#: lib/SSAuthenticator.pm:72
-msgid ""
-" Self-service usage \n"
-" permission revoked "
-msgstr ""
-" Omatoimikirjaston  \n"
-"   kaytto estetty   "
-
-#: lib/SSAuthenticator.pm:73
-msgid ""
-" Circulation rules  \n"
-"    not followed    "
-msgstr ""
-" Kayttajatilillanne \n"
-"on jotain omituista "
-
-#: lib/SSAuthenticator.pm:74
-msgid "   Library closed   "
-msgstr "Kirjasto on suljettu"
-
-#: lib/SSAuthenticator.pm:75
-msgid "Card not recognized "
-msgstr " Tuntematon kortti  "
-
-#: lib/SSAuthenticator.pm:76
-msgid "   Network error    "
-msgstr "Verkkoyhteysongelma "
-
-#: lib/SSAuthenticator.pm:77
-msgid "  Unexpected error  "
-msgstr " Odottamaton virhe  "
-
-#: lib/SSAuthenticator.pm:78
-msgid " I Remembered you!  "
-msgstr "   Muistin sinut!   "
-
-#: lib/SSAuthenticator.pm:79
-msgid "Contact your library"
-msgstr " Kysy lisaa meilta  "
-
-#: lib/SSAuthenticator.pm:82
 msgid ""
 "  I am waking up.   \n"
 "Please wait a moment\n"
@@ -94,7 +67,25 @@ msgstr ""
 " Odotatko hetkisen? \n"
 "Itseani tutkiskelen "
 
-#: lib/SSAuthenticator.pm:83
+msgid "  Unexpected error  "
+msgstr " Odottamaton virhe  "
+
+msgid ""
+" Circulation rules  \n"
+"    not followed    "
+msgstr ""
+" Kayttajatilillanne \n"
+"on jotain omituista "
+
+msgid " Enjoy our library. "
+msgstr "Nauti kirjastostamme"
+
+msgid " I Remembered you!  "
+msgstr "   Muistin sinut!   "
+
+msgid " I aim to please ;) "
+msgstr "Tahtaan tyydytykseen"
+
 msgid ""
 " I have failed you  \n"
 "  I am not working  \n"
@@ -106,69 +97,46 @@ msgstr ""
 "    Ota yhteytta    \n"
 "    kirjastoosi.    "
 
-#: lib/SSAuthenticator.pm:84
 msgid ""
-"   I am complete    \n"
-"   Please use me.   "
+" Self-service usage \n"
+" permission revoked "
 msgstr ""
-"  Olen kokonainen.  \n"
-"  Tule kayttamaan   \n"
-"       minua!       "
+" Omatoimikirjaston  \n"
+"   kaytto estetty   "
 
-#: lib/SSAuthenticator/Greetings.pm:21
-#, fuzzy
-msgid "   Welcome again!   "
-msgstr "Tervetuloa uudestaan"
+msgid ""
+" Terms & Conditions \n"
+"    not accepted    "
+msgstr ""
+"Kayttoehtoja ei ole \n"
+"     hyvaksytty     "
 
-#: lib/SSAuthenticator/Greetings.pm:22
-msgid "Thanks for visiting."
-msgstr " Kiitos kaynnistasi "
+msgid " You are the best!  "
+msgstr "    Olet huippu!    "
 
-#: lib/SSAuthenticator/Greetings.pm:23
-msgid "   See you soon!    "
-msgstr "   Nahdaan pian!    "
+msgid "<3 <3 <3 <3 <3 <3 <3"
+msgstr "<3 <3 <3 <3 <3 <3 <3"
 
-#: lib/SSAuthenticator/Greetings.pm:24
-msgid " I aim to please ;) "
-msgstr "Tahtaan tyydytykseen"
+msgid "Card not recognized "
+msgstr " Tuntematon kortti  "
 
-#: lib/SSAuthenticator/Greetings.pm:25
+msgid "Contact your library"
+msgstr " Kysy lisaa meilta  "
+
+msgid "I am but a robot ..."
+msgstr "Olen pelkka robotti."
+
 msgid "I hope you like us! "
 msgstr " Pidathan minusta?  "
 
-#: lib/SSAuthenticator/Greetings.pm:26
-#, fuzzy
-msgid " Enjoy our library. "
-msgstr " Kysy lisaa meilta  "
-
-#: lib/SSAuthenticator/Greetings.pm:27
-msgid  "     Have fun!   :) "
-msgstr "  Pida hauskaa   :) "
-
-#: lib/SSAuthenticator/Greetings.pm:28
-msgid  "     Take care!     "
-msgstr "    Pida huolta!    "
-
-#: lib/SSAuthenticator/Greetings.pm:29
-msgid  " You are the best!  "
-msgstr "    Olet huippu!    "
-
-#: lib/SSAuthenticator/Greetings.pm:30
-msgid  "I like you already. "
+msgid "I like you already. "
 msgstr "Tykkaan jo sinusta! "
 
-#: lib/SSAuthenticator/Greetings.pm:31
-msgid  "Our place is great. "
+msgid "Our place is great. "
 msgstr "Meidan kirjasto on 1"
 
-#: lib/SSAuthenticator/Greetings.pm:32
-msgid  "Please remember me! "
+msgid "Please remember me! "
 msgstr "    Muista minut    "
 
-#: lib/SSAuthenticator/Greetings.pm:33
-msgid  "<3 <3 <3 <3 <3 <3 <3"
-msgstr "<3 <3 <3 <3 <3 <3 <3"
-
-#: lib/SSAuthenticator/Greetings.pm:34
-msgid  "I am but a robot ..."
-msgstr "Olen pelkka robotti."
+msgid "Thanks for visiting."
+msgstr " Kiitos kaynnistasi "

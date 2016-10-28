@@ -1,83 +1,40 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
-msgid ""
-msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-26 10:43+0300\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
-"Content-Transfer-Encoding: 8bit\n"
-
-#: lib/SSAuthenticator.pm:67
-msgid "   Access granted   "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:68
-msgid "   Access denied    "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:69
 msgid "     Age limit      "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:70
-msgid ""
-" Terms & Conditions \n"
-"    not accepted    "
+msgid "     Have fun!   :) "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:71
+msgid "     Take care!     "
+msgstr ""
+
+msgid "   Access denied    "
+msgstr ""
+
+msgid "   Access granted   "
+msgstr ""
+
+msgid ""
+"   I am complete    \n"
+"   Please use me.   "
+msgstr ""
+
+msgid "   Library closed   "
+msgstr ""
+
+msgid "   Network error    "
+msgstr ""
+
+msgid "   See you soon!    "
+msgstr ""
+
+msgid "   Welcome again!   "
+msgstr ""
+
 msgid ""
 "   Wrong borrower   \n"
 "      category      "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:72
-msgid ""
-" Self-service usage \n"
-" permission revoked "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:73
-msgid ""
-" Circulation rules  \n"
-"    not followed    "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:74
-msgid "   Library closed   "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:75
-msgid "Card not recognized "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:76
-msgid "   Network error    "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:77
-msgid "  Unexpected error  "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:78
-msgid " I Remembered you!  "
-msgstr ""
-
-#: lib/SSAuthenticator.pm:79
-msgid "Contact your library"
-msgstr ""
-
-#: lib/SSAuthenticator.pm:82
 msgid ""
 "  I am waking up.   \n"
 "Please wait a moment\n"
@@ -85,7 +42,23 @@ msgid ""
 " everything I need. "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:83
+msgid "  Unexpected error  "
+msgstr ""
+
+msgid ""
+" Circulation rules  \n"
+"    not followed    "
+msgstr ""
+
+msgid " Enjoy our library. "
+msgstr ""
+
+msgid " I Remembered you!  "
+msgstr ""
+
+msgid " I aim to please ;) "
+msgstr ""
+
 msgid ""
 " I have failed you  \n"
 "  I am not working  \n"
@@ -93,64 +66,42 @@ msgid ""
 "      library       "
 msgstr ""
 
-#: lib/SSAuthenticator.pm:84
 msgid ""
-"   I am complete    \n"
-"   Please use me.   "
+" Self-service usage \n"
+" permission revoked "
 msgstr ""
 
-#: lib/SSAuthenticator/Greetings.pm:21
-msgid "   Welcome again!   "
+msgid ""
+" Terms & Conditions \n"
+"    not accepted    "
 msgstr ""
 
-#: lib/SSAuthenticator/Greetings.pm:22
-msgid "Thanks for visiting."
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:23
-msgid "   See you soon!    "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:24
-msgid " I aim to please ;) "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:25
-msgid "I hope you like us! "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:26
-msgid " Enjoy our library. "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:27
-msgid "     Have fun!   :) "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:28
-msgid "     Take care!     "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:29
 msgid " You are the best!  "
 msgstr ""
 
-#: lib/SSAuthenticator/Greetings.pm:30
-msgid "I like you already. "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:31
-msgid "Our place is great. "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:32
-msgid "Please remember me! "
-msgstr ""
-
-#: lib/SSAuthenticator/Greetings.pm:33
 msgid "<3 <3 <3 <3 <3 <3 <3"
 msgstr ""
 
-#: lib/SSAuthenticator/Greetings.pm:34
+msgid "Card not recognized "
+msgstr ""
+
+msgid "Contact your library"
+msgstr ""
+
 msgid "I am but a robot ..."
+msgstr ""
+
+msgid "I hope you like us! "
+msgstr ""
+
+msgid "I like you already. "
+msgstr ""
+
+msgid "Our place is great. "
+msgstr ""
+
+msgid "Please remember me! "
+msgstr ""
+
+msgid "Thanks for visiting."
 msgstr ""

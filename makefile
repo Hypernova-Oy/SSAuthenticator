@@ -26,7 +26,7 @@ build: compile
 
 restart: serviceEnable
 
-install: build configure perlDeploy scriptsLink translateDeploy serviceEnable
+install: build configure perlDeploy scriptsLink translateInstall serviceEnable
 
 perlDeploy:
 	./Build installdeps
@@ -71,8 +71,8 @@ scriptsLink:
 scriptsUnlink:
 	rm $(systemPath)/$(programName)
 
-translateDeploy:
-	bash translate.sh
+translateInstall:
+	bash translate.sh install
 
 clean:
 	./Build realclean
