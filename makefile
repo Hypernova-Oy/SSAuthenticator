@@ -58,7 +58,7 @@ unconfigure:
 serviceEnable:
 	systemctl daemon-reload
 	systemctl enable $(programName)
-	systemctl start $(programName)
+	systemctl restart $(programName)
 
 serviceDisable:
 	systemctl stop $(programName)
