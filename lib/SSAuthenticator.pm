@@ -292,6 +292,10 @@ sub isAuthorizedApi {
     elsif ($status eq 200 && $permission) {
         return $permission ? OK : ERR_ERR;
     }
+    elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
+        ERROR "isAuthorizedApi($cardnumber) REST API returns server error:\n".$httpResponse->as_string;
+        return undef;
+    }
 
     ERROR "isAuthorizedApi() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response";
     return undef; #For some reason server doesn't respond. Fall back to using cache.
@@ -301,11 +305,12 @@ sub decodeContent {
     my ($response) = @_;
 
     my $responseContent = $response->decoded_content;
-    INFO "decodeContent() \$responseContent=$responseContent";
 
     if ($responseContent) {
+        INFO "decodeContent() \$responseContent=$responseContent";
         return JSON::decode_json $responseContent;
     } else {
+        INFO "decodeContent() \$responseContent=undef";
         return ();
     }
 }
