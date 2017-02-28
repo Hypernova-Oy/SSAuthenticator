@@ -293,7 +293,7 @@ sub isAuthorizedApi {
         return $permission ? OK : ERR_ERR;
     }
     elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
-        ERROR "isAuthorizedApi($cardnumber) REST API returns server error:\n".$httpResponse->as_string;
+        ERROR "isAuthorizedApi($cardNumber) REST API returns server error:\n".$httpResponse->as_string;
         return undef;
     }
 
