@@ -30,6 +30,7 @@ Behavioural test case where Haisuli gets different kinds of errors while he trie
 =cut
 
 
+
 subtest "Scenario: Haisuli tries to access a self-service resource, but has accumulated almost all possible penalties. Now he is trying to redeem himself.", \&haisuliRedemption;
 sub haisuliRedemption {
     my ($module, $moduleApi);
@@ -95,6 +96,19 @@ sub haisuliRedemption {
         httpCode   => 200,
         error      => 'Koha::Exception::SelfService',
         permission => 'false',
+    });
+
+    readBarcode($respTest = {
+        testScenarioName => "Haisuli tries again, but the library is closed. User error is NOT cached.",
+        assert_authStatus      => SSAuthenticator::ERR_CLOSED,
+        assert_cached          => 0,
+        assert_cacheUsed       => 0,
+        assert_oledMsgContains => 'open at \d\d:\d\d-\d\d:\d\d',
+        httpCode   => 200,
+        error      => 'Koha::Exception::SelfService::OpeningHours',
+        permission => 'false',
+        startTime  => '09:00',
+        endTime    => '21:00',
     });
 
     readBarcode($respTest = {
@@ -164,6 +178,8 @@ sub getApiResponseMock {
     my $jsonBody = {};
     $jsonBody->{error} = $respTest->{error} if $respTest->{error};
     $jsonBody->{permission} = $respTest->{permission} if $respTest->{permission};
+    $jsonBody->{startTime}  = $respTest->{startTime}  if $respTest->{startTime};
+    $jsonBody->{endTime}    = $respTest->{endTime}    if $respTest->{endTime};
     $jsonBody = JSON::encode_json($jsonBody);
 
     my $response = HTTP::Response->new(

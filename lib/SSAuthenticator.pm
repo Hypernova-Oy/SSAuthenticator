@@ -66,22 +66,27 @@ my %messages = (
     OK                 , N__"   Access granted   ", # '=>' quotes the key automatically, use ',' to not quote the constants to strings
     'ACCESS_DENIED'   => N__"   Access denied    ",
     ERR_UNDERAGE       , N__"     Age limit      ",
-    ERR_SSTAC          , N__" Terms & Conditions \n    not accepted    ",
-    ERR_BBC            , N__"   Wrong borrower   \n      category      ",
-    ERR_REVOKED        , N__" Self-service usage \n permission revoked ",
-    ERR_NAUGHTY        , N__" Circulation rules  \n    not followed    ",
+    ERR_SSTAC          , N__" Terms & Conditions \\n    not accepted    ",
+    ERR_BBC            , N__"   Wrong borrower   \\n      category      ",
+    ERR_REVOKED        , N__" Self-service usage \\n permission revoked ",
+    ERR_NAUGHTY        , N__" Circulation rules  \\n    not followed    ",
     ERR_CLOSED         , N__"   Library closed   ",
     ERR_BADCARD        , N__"Card not recognized ",
     ERR_NOTCACHED      , N__"   Network error    ",
     ERR_ERR            , N__"  Unexpected error  ",
     'CACHE_USED'      => N__" I Remembered you!  ",
     'CONTACT_LIBRARY' => N__"Contact your library",
+    'OPEN_AT'         => N__"Open at",
 
     ##INITIALIZATION MESSAGES
-    'INITING_STARTING'  => N__"  I am waking up.   \nPlease wait a moment\nWhile I check I have\n everything I need. ",
-    'INITING_ERROR'     => N__" I have failed you  \n  I am not working  \nPlease contact your \n      library       ",
-    'INITING_FINISHED'  => N__"   I am complete    \n   Please use me.   ",
+    'INITING_STARTING'  => N__"  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n everything I need. ",
+    'INITING_ERROR'     => N__" I have failed you  \\n  I am not working  \\nPlease contact your \\n      library       ",
+    'INITING_FINISHED'  => N__"   I am complete    \\n   Please use me.   ",
 );
+
+#Certain $authorization-statuses have extra parameters that need to be displayed. Use this package variable
+#as a hack to deliver parameters through the authorization-stack without needing to refactor everything.
+my %packageHack;
 
 sub db {
     return SSAuthenticator::DB::getDB();
@@ -130,7 +135,7 @@ sub showAccessMsg {
 
 sub showInitializingMsg {
     my ($type) = @_;
-    return showOLEDMsg(  [split("\n", __($messages{"INITING_$type"}))]  );
+    return showOLEDMsg(  [split(/\\n/, __($messages{"INITING_$type"}))]  );
 }
 
 =head2 showOLEDMsg
@@ -161,14 +166,15 @@ sub _getAccessMsg {
     my ($authorization, $cacheUsed) = @_;
 
     my @msg;
-    push(@msg, split("\n", __($messages{'ACCESS_DENIED'}))) if $authorization < 0;
-    push(@msg, split("\n", __($messages{$authorization})));
-    push(@msg, split("\n", __($messages{'CONTACT_LIBRARY'}))) if $authorization < 0;
-    push(@msg, split("\n", __($messages{'CACHE_USED'}))) if $cacheUsed;
+    push(@msg, split(/\\n/, __($messages{'ACCESS_DENIED'}))) if $authorization < 0;
+    push(@msg, split(/\\n/, __($messages{$authorization})));
+    push(@msg, split(/\\n/, __($messages{'OPEN_AT'}).' '.$packageHack{openingTime}.'-'.$packageHack{closingTime})) if $authorization == ERR_CLOSED;
+    push(@msg, split(/\\n/, __($messages{'CONTACT_LIBRARY'}))) if $authorization < 0;
+    push(@msg, split(/\\n/, __($messages{'CACHE_USED'}))) if $cacheUsed;
 
     if ($authorization > 0) { #Only print a happy-happy-joy-joy message on success ;)
         my $happyHappyJoyJoy = SSAuthenticator::Greetings::random();
-        push(@msg, split("\n", __($happyHappyJoyJoy))) if $happyHappyJoyJoy;
+        push(@msg, split(/\\n/, __($happyHappyJoyJoy))) if $happyHappyJoyJoy;
     }
 
     return \@msg;
@@ -195,7 +201,8 @@ sub isAuthorized {
     #Don't extend cache duration if there is a cache hit. Original date of checking is important
     updateCache($cardNumber, $authorization)
         if (not($cacheUsed) && $authorization != ERR_BADCARD && $authorization != ERR_ERR
-                            && $authorization != ERR_NOTCACHED);
+                            && $authorization != ERR_NOTCACHED && $authorization != ERR_CLOSED
+        );
 
     return ($authorization, $cacheUsed);
 }
@@ -274,6 +281,11 @@ sub isAuthorizedApi {
         return ERR_SSTAC    if $err eq 'Koha::Exception::SelfService::TACNotAccepted';
         return ERR_BBC      if $err eq 'Koha::Exception::SelfService::BlockedBorrowerCategory';
         return ERR_REVOKED  if $err eq 'Koha::Exception::SelfService::PermissionRevoked';
+        if ($err eq 'Koha::Exception::SelfService::OpeningHours') {
+            $packageHack{openingTime} = $body->{startTime};
+            $packageHack{closingTime} = $body->{endTime};
+            return ERR_CLOSED;
+        }
         return ERR_NAUGHTY  if $err eq 'Koha::Exception::SelfService';
         return ERR_ERR;
     }

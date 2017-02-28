@@ -38,6 +38,10 @@ sub translationsFi_FI {
     $arr = SSAuthenticator::_getAccessMsg( SSAuthenticator::ERR_REVOKED, 0 );
     is($arr->[0],
        '    Paasy evatty    ');
+    is($arr->[1],
+       ' Omatoimikirjaston  ');
+    is($arr->[2],
+       '   kaytto estetty   ');
 }
 
 subtest "Translations en_GB", \&translationsEn_GB;
@@ -53,6 +57,10 @@ sub translationsEn_GB {
     $arr = SSAuthenticator::_getAccessMsg( SSAuthenticator::ERR_REVOKED, 0 );
     is($arr->[0],
        '   Access denied    ');
+    is($arr->[1],
+       ' Self-service usage ');
+    is($arr->[2],
+       ' permission revoked ');
 }
 
 t::Examples::rmConfig();
