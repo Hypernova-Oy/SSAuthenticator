@@ -508,7 +508,7 @@ sub main {
                 controlAccess($cardNumber);
             };
             if ($@) {
-                FATAL "controlAccess($cardnumber) $@";
+                FATAL "controlAccess($cardNumber) $@";
             }
         }
         close $device; # Clears buffer
