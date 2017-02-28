@@ -504,7 +504,12 @@ sub main {
             chomp($cardNumber);
             INFO "main() Read barcode '$cardNumber'";
 
-            controlAccess($cardNumber);
+            eval {
+                controlAccess($cardNumber);
+            };
+            if ($@) {
+                FATAL "controlAccess($cardnumber) $@";
+            }
         }
         close $device; # Clears buffer
     }
