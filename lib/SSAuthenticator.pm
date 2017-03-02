@@ -453,10 +453,11 @@ sub config {
 
 sub openLogger {
     my ($verbose) = @_;
-    Log::Log4perl->easy_init($ERROR) && return if not($verbose);
-    Log::Log4perl->easy_init($FATAL) && return if $verbose == -1;
-    Log::Log4perl->easy_init($INFO) && return if $verbose == 1;
-    Log::Log4perl->easy_init($DEBUG) && return if $verbose == 2;
+    $ENV{SSA_LOG_LEVEL} = $verbose if (defined($verbose));
+    Log::Log4perl->easy_init($ERROR) && return if not($ENV{SSA_LOG_LEVEL});
+    Log::Log4perl->easy_init($FATAL) && return if $ENV{SSA_LOG_LEVEL} == -1;
+    Log::Log4perl->easy_init($INFO)  && return if $ENV{SSA_LOG_LEVEL} == 1;
+    Log::Log4perl->easy_init($DEBUG) && return if $ENV{SSA_LOG_LEVEL} == 2;
 }
 
 sub setDefaultLanguage {
