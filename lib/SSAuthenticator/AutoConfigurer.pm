@@ -62,9 +62,6 @@ sub saveAndExitServiceMode {
     sleep 3; # exiting service mode takes some time
 
     $scanner->baudrate(9600);
-    INFO "BEL BEL :)";
-    writeCmd($self, "\x07\r"); #BEL
-    writeCmd($self, "\$\x07\r"); #BEL
 }
 
 sub configureSettings {
