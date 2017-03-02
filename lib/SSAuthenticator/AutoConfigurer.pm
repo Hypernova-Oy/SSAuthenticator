@@ -20,9 +20,10 @@ sub new {
     $self->{scanner} = new Device::SerialPort ("/dev/barcodescanner", 1)
 	|| die("No barcodescanner detected");
     $self->{scanner}->baudrate(9600);
-    $self->{scanner}->parity("odd");
+    $self->{scanner}->parity("none");
     $self->{scanner}->databits(8);
     $self->{scanner}->stopbits(1);
+    $self->{scanner}->handshake('rts');
 
     return bless($self, $class);
 }
