@@ -34,55 +34,6 @@ sub configure {
 	|| die("closing barcode scanner failed");
 }
 
-sub configureSettings {
-    my ($self) = @_;
-    syslog(LOG_INFO, "Configuring scanner's settings");
-    setTerminatorToLF($self);
-    setCrossHair($self);
-    setAutomaticOperatingMode($self);
-}
-sub saveAndExitServiceMode {
-    my ($self) = @_;
-    syslog(LOG_INFO, "saving scanner's settings and entering normal mode");
-    my $scanner = $self->{scanner};
-
-    writeCmd($self, "\$Ar\r");
-
-    sleep 3; # exiting service mode takes some time
-
-    $scanner->baudrate(9600);
-}
-
-sub isDataWritten {
-    my ($bytesWritten, $sentData) = @_;
-    return $bytesWritten == length($sentData);
-}
-
-sub setTerminatorToLF {
-    my ($self) = @_;
-    syslog(LOG_INFO, "Setting scanner's LF character to \\n");
-    writeCmd($self, "\$CLFSU0A00000000000000000000000000000000000000\r");
-}
-
-sub setCrossHair {
-    my ($self) = @_;
-    syslog(LOG_INFO, "Setting scanner's crosshair");
-    writeCmd($self, "\$FA03760240\r");
-}
-
-sub setAutomaticOperatingMode {
-    my ($self) = @_;
-    syslog(LOG_INFO, "Setting 'automatic' operating mode");
-    writeCmd($self, "\$CSNRM02\r");
-}
-sub writeCmd {
-    my ($self, $cmd) = @_;
-    if (!isDataWritten($self->{scanner}->write($cmd), $cmd)) {
-        die("Data '$cmd' not written");
-    }
-    sleep 1;
-}
-
 sub setDeviceToServiceMode {
     my ($self) = @_;
     syslog(LOG_INFO, "Setting scanner to service mode");
@@ -96,6 +47,177 @@ sub sendServiceModeSignal {
     my ($self) = @_;
     writeCmd($self, "\$S\r");
     sleep 3;
+}
+
+sub saveAndExitServiceMode {
+    my ($self) = @_;
+    syslog(LOG_INFO, "Saving scanner's settings to RAM and entering normal mode");
+    my $scanner = $self->{scanner};
+
+    #writeCmd($self, "\$Ar\r"); #Saves to permanent memory
+    writeCmd($self, "\$r01\r"); #Saves to RAM, which taxes the flash-memory's write-cycles less
+
+    sleep 3; # exiting service mode takes some time
+
+    $scanner->baudrate(9600);
+}
+
+sub configureSettings {
+    my ($self) = @_;
+    syslog(LOG_INFO, "Configuring scanner's settings");
+    $self->setGlobalSuffixToLF();
+#    $self->setAimingCoordinates();
+    $self->aimingAutoCalibration();
+    $self->setAutomaticOperatingMode();
+    $self->setAllowedSymbologies();
+    $self->setBeepOnASCII_BEL(1);
+}
+
+=head2 isDataWritten
+
+@THROWS die if write 'failed' or was 'incomplete'
+
+=cut
+
+sub isDataWritten {
+    my ($bytesWritten, $sentData) = @_;
+    die "write failed" unless $bytesWritten;
+    die "write incomplete $bytesWritten/".length($sentData) unless $bytesWritten == length($sentData);
+}
+
+=head2 isDataRead
+
+@THROWS die if read 'failed' or was 'incomplete'
+
+=cut
+
+sub isDataRead {
+    my ($bytesRead, $bytesRequested) = @_;
+    die "read failed" unless $bytesWritten;
+    die "read incomplete $bytesRead/$bytesRequested" unless $bytesRead == $bytesRequested;
+}
+
+=head2 setGlobalSuffixToLF
+
+Adds \n after each barcode read
+
+=cut
+
+sub setGlobalSuffixToLF {
+    my ($self) = @_;
+    syslog(LOG_INFO, "Setting Global suffix to \\n");
+    writeCmd($self, "\$CLFSU0A00000000000000000000000000000000000000\r");
+    my $savedBytes = readMsg($self, "\$CLFSU\r");
+    syslog(LOG_INFO, "  Saved '$savedCoordinates'");
+}
+
+=head2 setAimingCoordinates
+@DEPRECATED
+
+It is preferred to let the reader autodetect the center coordinates using the laser aimer.
+This is done in aimingAutoCalibration()
+
+Gryphon 4400 manual, page 287
+
+FA - Aiming Write Coordinates. Writes specified coordinates into the factory non-volatile
+memory area. Use this command if you wish to override any other previously written;
+factory, user or custom calibration or setting.
+
+=cut
+
+sub setAimingCoordinates {
+    my ($self) = @_;
+    my $coordinates = '03760240';
+    syslog(LOG_INFO, "Setting scanner's aiming coordinates to '$coordinates'");
+    writeCmd($self, "\$FA$coordinates\r");
+    my $savedCoordinates = readMsg($self, "\$Fx\r");
+    syslog(LOG_INFO, "  Saved '$savedCoordinates'");
+}
+
+=head2 aimingAutoCalibration
+
+Gryphon 4400 manual, page 287
+
+Fx - Aiming Auto Calibration. The reader will switch on the laser aimer, determine the
+coordinates of the center cross, and store into the factory non-volatile memory area (Aimer
+Calibration).
+
+=cut
+
+sub aimingAutoCalibration {
+    my ($self) = @_;
+    syslog(LOG_INFO, "Auto calibrating scanner");
+    writeCmd($self, "\$Fx\r");
+    my $coordinates = readMsg($self, "\$Fx\r");
+    syslog(LOG_INFO, "  Coordinates '$coordinates'");
+}
+
+=head2 setAutomaticOperatingMode
+
+Gryphon 4400 manual page 270
+
+Automatic Mode
+In Automatic mode, the scanner is continuously scanning. When a label enters the reading
+zone and is decoded, no more decodes and reading phases are allowed until the label has left
+the reading area. In order to guarantee identification of the code in the reading zone, a
+threshold specifies the number of scans after the successful decode that the scanner will wait
+before rearming the reading phase. The transmission of the decoded label depends on the
+configuration of the Transmission Mode parameter.
+
+=cut
+
+sub setAutomaticOperatingMode {
+    my ($self) = @_;
+    syslog(LOG_INFO, "Setting 'automatic' operating mode");
+    writeCmd($self, "\$CSNRM02\r");
+}
+
+sub writeCmd {
+    my ($self, $cmd) = @_;
+    eval {
+        isDataWritten($self->{scanner}->write($cmd), $cmd));
+    };
+    die("writeCmd($cmd):> $@") if $@;
+    sleep 1;
+}
+
+=head2 setAllowedSymbologies
+
+Gryphon 4400 manual page 93
+
+Disables all symbologies and allows Code39 without checknum
+
+=cut
+
+sub setAllowedSymbologies {
+    my ($self) = @_;
+    syslog(LOG_INFO, "Setting allowed symbologies");
+    writeCmd($self, "\$AD\r");     #Disable all symbologies
+    writeCmd($self, "\$CC3EN01\r"); #Allow Code 39
+    writeCmd($self, "\$CC3CC00\r"); #Check Calculation disabled
+    writeCmd($self, "\$CC3MR02\r"); #Must read successfully consecutively two times
+}
+
+=head2 setBeepOnASCII_BEL
+
+When sending ASCII BEL 0x07 to the barcode reader, it beeps :)
+
+=cut
+
+sub setBeepOnASCII_BEL {
+    my ($self) = @_;
+    syslog(LOG_INFO, "Allowing beep on ASCII BEL");
+    writeCmd($self, "\$CR2BB01\r");
+}
+
+sub readMsg {
+    my ($self, $bytes) = @_;
+    my ($byteCount_in, $string_in) = $self->{scanner}->read($bytes);
+    eval {
+        isDataRead($byteCount_in, $bytes);
+    };
+    die("readMsg($bytes):> $@") if $@;
+    return $string_in;
 }
 
 sub main {
