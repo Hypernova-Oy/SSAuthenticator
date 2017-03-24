@@ -18,7 +18,7 @@ Manage database access for this daemon
 
 =cut
 
-my $l = SSLog->get_logger(); #Package logger
+my $l = bless({}, 'SSLog');
 
 my $CARDNUMBER_FILE = "/var/cache/ssauthenticator/patron.db";
 sub getDB {

@@ -5,6 +5,10 @@
 # This file is part of SSAuthenticator.
 #
 
+BEGIN {
+    $ENV{SSA_LOG_LEVEL} = 40; #Logging verbosity adjustment 4 is fatal -4 is debug always
+}
+
 use Modern::Perl;
 
 use Test::More;
@@ -17,7 +21,6 @@ use t::Examples;
 use t::Mocks;
 use SSAuthenticator;
 
-#$ENV{SSA_LOG_LEVEL} = -4; #Debug verbosity
 
 my $respTest = {}; #package variable describing the next scenario
 my $updateCacheTriggered = 0; #Keep track if the cache was actually updated. Occasionally return values can be the same as cached values even if no cache was updated, leading to a lot of confusion.

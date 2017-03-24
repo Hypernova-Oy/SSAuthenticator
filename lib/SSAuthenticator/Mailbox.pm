@@ -21,7 +21,7 @@ If there is such a file, parses it, does the given action, and truncates the fil
 
 =cut
 
-my $l = SSLog->get_logger(); #Package logger
+my $l = bless({}, 'SSLog');
 
 =head2 checkMailbox
 

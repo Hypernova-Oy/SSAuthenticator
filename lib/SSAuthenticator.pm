@@ -53,14 +53,15 @@ use OLED::Client;
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
 use GPIO;
-use SSLog;
 use SSAuthenticator::API;
 use SSAuthenticator::Config;
 use SSAuthenticator::AutoConfigurer;
 use SSAuthenticator::DB;
 use SSAuthenticator::Greetings;
+use SSAuthenticator::Mailbox;
+use SSLog;
 
-my $l = SSLog->get_logger(); #Package logger
+my $l = bless({}, 'SSLog');
 
 my %messages = (
                             #-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++
@@ -475,10 +476,6 @@ sub main {
 
     showInitializingMsg('STARTING'); sleep 2;
     eval {
-        if (!SSAuthenticator::Config::isConfigValid()) {
-            die("Config file ".SSAuthenticator::Config::getConfigFile()." is invalid");
-        }
-
         setDefaultLanguage();
         configureBarcodeScanner();
     };
@@ -491,6 +488,7 @@ sub main {
     $l->info("main() Entering main loop");
     showInitializingMsg('FINISHED');
     while (1) {
+        SSAuthenticator::Mailbox::checkMailbox();
         my $device;
         ##Sometimes the barcode scanner can disappear and reappear during/after configuration. Try to find a barcode scanner handle
         for (my $tries=0 ; $tries < 10 ; $tries++) {

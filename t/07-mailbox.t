@@ -5,6 +5,10 @@
 # This file is part of SSAuthenticator.
 #
 
+BEGIN {
+    $ENV{SSA_LOG_LEVEL} = -4; #Logging verbosity adjustment 4 is fatal -4 is debug always
+}
+
 use Modern::Perl;
 
 use Test::More;
@@ -16,7 +20,6 @@ use SSAuthenticator::Mailbox;
 use SSAuthenticator::Config;
 use SSAuthenticator;
 
-#$ENV{SSA_LOG_LEVEL} = -4; #Debug verbosity
 
 =head2 07-mailbox.t
 

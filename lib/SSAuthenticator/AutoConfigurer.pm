@@ -11,7 +11,7 @@ use Modern::Perl;
 use Device::SerialPort qw( :PARAM :STAT 0.07 );
 
 use SSLog;
-my $l = SSLog->get_logger(); #Package logger
+my $l = bless({}, 'SSLog');
 
 sub new {
     my ($class) = @_;
@@ -84,7 +84,7 @@ sub configureSettings {
 
 sub isDataWritten {
     my ($bytesWritten, $sentData) = @_;
-    $l->logdie("write failed")unless $bytesWritten;
+    $l->logdie("write failed") unless $bytesWritten;
     $l->logdie("write incomplete $bytesWritten/".length($sentData)) unless $bytesWritten == length($sentData);
 }
 

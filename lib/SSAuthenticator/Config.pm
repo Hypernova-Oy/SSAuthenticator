@@ -15,7 +15,7 @@ use SSLog;
 
 my $config;
 my $configFile = "/etc/ssauthenticator/daemon.conf";
-my $l = SSLog->get_logger(); #Package logger
+my $l = bless({}, 'SSLog');
 
 
 
@@ -74,7 +74,7 @@ sub unloadConfig {
     $config = undef;
 }
 
-sub _isConfigValid() {
+sub _isConfigValid {
     my ($c) = @_;
     my $returnValue = 1;
 

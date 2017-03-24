@@ -20,7 +20,7 @@ subtest "Default config passes", \&defaultConfig;
 sub defaultConfig {
 
     my $confFile = newConfig();
-    ok(SSAuthenticator::Config::isConfigValid(), "Default config validates");
+    ok(SSAuthenticator::Config::getConfig(), "Default config validates");
 
 }
 
@@ -28,10 +28,12 @@ subtest "Config errors", \&configErrors;
 sub configErrors {
 
     newConfig("ConnectionTimeout no-string-allowed");
-    ok(!SSAuthenticator::Config::isConfigValid(), "not string as timeout value");
+    eval {SSAuthenticator::Config::getConfig()};
+    ok($@, "not string as timeout value");
 
     newConfig("MailboxDir /awneofnsldfkwainvelni23pnrfw9n/not-a-good-path-to-existing-dir");
-    ok(!SSAuthenticator::Config::isConfigValid(), "MailboxDir is not ok");
+    eval {SSAuthenticator::Config::getConfig()};
+    ok($@, "MailboxDir is not ok");
 }
 
 

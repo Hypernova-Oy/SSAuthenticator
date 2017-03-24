@@ -12,6 +12,7 @@ use File::Find;
 
 subtest "Compile all modules", \&compile;
 sub compile {
+    eval {
     File::Find::find({
             no_chdir => 1,
             wanted => sub {
@@ -20,4 +21,9 @@ sub compile {
         },
         'lib', 't', #Directories to look for files
     );
+    };
+    ok(0, $@) if $@;
 }
+
+done_testing;
+

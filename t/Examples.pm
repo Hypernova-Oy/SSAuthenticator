@@ -15,11 +15,13 @@ use SSAuthenticator::Config;
 use SSAuthenticator::DB;
 
 my $tempConfFile;
+my $tempLog4perlFile;
 sub _writeTempConf {
     my ($content) = @_;
     $tempConfFile = File::Temp->new();
+#    $tempConfFile->unlink_on_destroy( 0 );
 
-    open(my $FILE, '>>', $tempConfFile->filename) or die $!;
+    open(my $FILE, '>', $tempConfFile->filename) or die $!;
     print $FILE $content;
     close $FILE;
 
@@ -29,6 +31,8 @@ sub _writeTempConf {
 my $mailboxDir = File::Temp->newdir();
 sub _getDefaultConf {
     my $dir = $mailboxDir->dirname();
+    setLog4perlConfig();
+    my $log4perl = $tempLog4perlFile->filename();
 
     return <<CONF;
 ApiBaseUrl http://localhost-api/api/v1
@@ -45,9 +49,11 @@ ConnectionTimeout 3
 RandomGreetingChance 50
 MailboxDir $dir
 DefaultLanguage en_US
+Log4perlConfig $log4perl
 
 CONF
 }
+
 sub writeDefaultConf {
     my $content = _getDefaultConf();
     return _writeTempConf($content);
@@ -96,6 +102,24 @@ sub createTestFile {
     print $FH $contents;
     close $FH or die $!;
     return 1;
+}
+
+sub setLog4perlConfig {
+    my $conf = <<CONF;
+
+log4perl.rootLogger = WARN, SCREEN
+
+log4perl.appender.SCREEN = Log::Log4perl::Appender::ScreenColoredLevels
+log4perl.appender.SCREEN.utf8=1
+log4perl.appender.SCREEN.stderr=0
+
+
+CONF
+#log4perl.appender.SCREEN.layout=PatternLayout
+#log4perl.appender.SCREEN.layout.ConversionPattern=[\%d] [\%p] \%m\{indent\} \%l \%M \%n
+
+    $tempLog4perlFile = _writeTempConf($conf);
+    return $tempLog4perlFile;
 }
 
 1;

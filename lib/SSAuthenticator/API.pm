@@ -13,9 +13,10 @@ use Digest::SHA;
 use LWP::UserAgent;
 use HTTP::Request;
 
+use SSAuthenticator::Config;
 use SSLog;
 
-my $l = SSLog->get_logger(); #Package logger
+my $l = bless({}, 'SSLog');
 
 sub _makeSignature {
     my ($method, $userid, $headerXKohaDate, $apiKey) = @_;
@@ -49,7 +50,7 @@ sub _prepareAuthenticationHeaders {
 sub getApiResponse {
     my ($cardNumber) = @_;
 
-    my $conf = SSAuthenticator::config();
+    my $conf = SSAuthenticator::Config::getConfig();
     my $requestUrl = $conf->param('ApiBaseUrl') . "/borrowers/ssstatus";
 
     my $ua = LWP::UserAgent->new;
