@@ -149,15 +149,19 @@ sub showOLEDMsg {
     my ($msgs) = @_;
 
     my $err;
-    #Prevent printing more than the screen can handle
-    my $rows = scalar(@$msgs);
-    $rows = 4 if $rows > 4;
+    eval {
+        #Prevent printing more than the screen can handle
+        my $rows = scalar(@$msgs);
+        $rows = 4 if $rows > 4;
 
-    for (my $i=0 ; $i<$rows ; $i++) {
-        my $rv = $display->printRow($i, $msgs->[$i]);
-        $err = 1 unless ($rv =~ /^200/);
-    }
-    $display->endTransaction();
+        for (my $i=0 ; $i<$rows ; $i++) {
+            INFO "showOLEDMsg():> $i: ".$msgs->[$i];
+            my $rv = $display->printRow($i, $msgs->[$i]);
+            $err = 1 unless ($rv =~ /^200/);
+        }
+        $display->endTransaction();
+    };
+    ERROR "showOLEDMsg() $@" if $@;
 
     return $err ? 0 : 1;
 }
@@ -225,10 +229,11 @@ sub canUseLibrary {
     my $authorized;
     my $cacheUsed;
 
-    timeout_call(
+    my $timedOut = timeout_call(
         getTimeout(),
         sub {$authorized = isAuthorizedApi($cardNumber)}
     );
+    WARN "isAuthorizedApi() timed out" if $timedOut;
     INFO "isAuthorizedApi() returns ".($authorized || '');
 
     # Check if we got response from REST API
@@ -261,6 +266,8 @@ sub isAuthorizedApi {
     my ($cardNumber) = @_;
 
     my $httpResponse = SSAuthenticator::API::getApiResponse($cardNumber);
+    #warn Data::Dumper::Dumper($httpResponse);
+
     my $body = $httpResponse ? decodeContent($httpResponse) : {};
     my $err = $body->{error} || '';
     my $permission = $body->{permission} || '';
@@ -305,13 +312,14 @@ sub decodeContent {
     my ($response) = @_;
 
     my $responseContent = $response->decoded_content;
+    $responseContent = $response->{_content} unless $responseContent;
 
     if ($responseContent) {
         INFO "decodeContent() \$responseContent=$responseContent";
         return JSON::decode_json $responseContent;
     } else {
-        INFO "decodeContent() \$responseContent=undef";
-        return ();
+        FATAL "decodeContent() \$responseContent=undef";
+        die "decodeContent() \$responseContent is not defined!!";
     }
 }
 
@@ -358,14 +366,14 @@ sub playRTTTL {
     my ($song) = @_;
     system('rtttl-player','-p',config()->param('RTTTL-PlayerPin'),'-o',"song-$song");
     if ($? == -1) {
-        warn "failed to execute: $!\n";
+        WARN "failed to execute: $!\n";
     }
     elsif ($? & 127) {
-        warn sprintf "rtttl-player died with signal %d, %s coredump\n",
+        WARN sprintf "rtttl-player died with signal %d, %s coredump\n",
         ($? & 127),  ($? & 128) ? 'with' : 'without';
     }
     else {
-        warn sprintf "rtttl-player exited with value %d\n", $? >> 8;
+        WARN sprintf "rtttl-player exited with value %d\n", $? >> 8;
     };
 }
 
@@ -409,8 +417,10 @@ sub controlAccess {
     my ($authorizationStatus, $cacheUsed) = isAuthorized($cardNumber);
 
     if ($authorizationStatus > 0) {
+        INFO "controlAccess($cardNumber):> Granting access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef');
         grantAccess($authorizationStatus, $cacheUsed);
     } else {
+        INFO "controlAccess($cardNumber):> Denying access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef');
         denyAccess($authorizationStatus, $cacheUsed);
     }
 }

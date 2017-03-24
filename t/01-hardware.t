@@ -12,6 +12,8 @@ use SSAuthenticator::Config;
 my $defaultConfTempFile = t::Examples::writeDefaultConf();
 SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
+SSAuthenticator::openLogger(2); #Show only fatal errors. If you have problems with these tests. Give parameter 2 for debug logging.
+
 subtest "Manually inspect LEDs", \&ledInspection;
 sub ledInspection {
     my $ledDuration = 1;

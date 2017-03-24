@@ -28,6 +28,16 @@ sub setConfigFile {
     $configFile = $overloadedConfigFile;
     return $oldConfigFile;
 }
+
+=head2 getConfig
+
+Rereads the config file and
+
+@Returns Config::Simple
+@Throws die if Config::Simple has issues
+
+=cut
+
 sub getConfig {
     $config = new Config::Simple($configFile)
     || die Config::Simple->error(), ".\n",
@@ -48,15 +58,18 @@ sub unloadConfig {
 sub isConfigValid() {
     my $returnValue = 1;
 
-    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance', 'DefaultLanguage');
+    my @pwuid = getpwuid($<);
+
+    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey', 'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance', 'DefaultLanguage', 'MailboxDir');
+    my $c = getConfig();
     foreach my $param (@params) {
-        if (not(defined(getConfig()->param($param)))) {
+        if (not(defined($c->param($param)))) {
             ERROR "$param not defined in daemon.conf";
             $returnValue = 0;
         }
     }
 
-    my $timeout = getConfig()->param("ConnectionTimeout");
+    my $timeout = $c->param("ConnectionTimeout");
     if (!$timeout) {
         return $returnValue;
     } elsif (!($timeout =~ /\d+/)) {
@@ -67,6 +80,28 @@ sub isConfigValid() {
     } elsif ($timeout > 30000) {
         my $reason = "ConnectionTimeout value is too big. Max 30000 ms";
         ERROR $reason;
+        $returnValue = 0;
+    }
+
+    my $mailboxDir = $c->param('MailboxDir');
+    if    (! -e $mailboxDir) {
+        ERROR "Directory 'MailboxDir' '$mailboxDir' doesn't exist";
+        $returnValue = 0;
+    }
+    elsif (! -d $mailboxDir) {
+        ERROR "Directory 'MailboxDir' '$mailboxDir' is not a directory";
+        $returnValue = 0;
+    }
+    elsif (! -w $mailboxDir) {
+        ERROR "Directory 'MailboxDir' '$mailboxDir' is not writable by ".($pwuid[0] || $pwuid[1]);
+        $returnValue = 0;
+    }
+    elsif (! -r $mailboxDir) {
+        ERROR "Directory 'MailboxDir' '$mailboxDir' is not readable by ".($pwuid[0] || $pwuid[1]);
+        $returnValue = 0;
+    }
+    elsif (! -x $mailboxDir) {
+        ERROR "Directory 'MailboxDir' '$mailboxDir' is not executable by ".($pwuid[0] || $pwuid[1]);
         $returnValue = 0;
     }
 

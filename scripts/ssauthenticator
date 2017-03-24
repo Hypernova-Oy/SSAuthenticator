@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+# Copyright 2017 Koha-Suomi
 # Copyright 2016 Vaara-kirjastot
 #
 
@@ -9,10 +10,13 @@ use Getopt::Long qw(:config no_ignore_case);
 
 use SSAuthenticator;
 
-my $help;
+my ($help, $message);
+my @params;
 
 GetOptions(
     'h|help'                      => \$help,
+    'm|message=s'                 => \$message,
+    'p|params=s'                  => \@params,
 );
 
 my $usage = <<USAGE;
@@ -24,6 +28,22 @@ REST API and its local cache.
 
   -h --help               HELP!
 
+Mailbox-feature
+
+One can send commands to the SSAuthenticator via this script or by manually writing files to the MailboxDir.
+It is recommended to use the script to send messages to the SSAuthenticator.
+
+  -m Send a command to the mailbox
+  -p Specify the parameter for mailbox commands
+
+EXAMPLES
+
+    #Runs the SSAuthenticator-daemon using system-level configurations
+    ssauthenticator
+
+    #Sends a "read virtual barcode 167A0123123"-command to the SSAuthenticator's mailbox
+    ssauthenticator -m controlAccess -p 167A0123123
+
 USAGE
 
 if ($help) {
@@ -31,4 +51,9 @@ if ($help) {
   exit 0;
 }
 
-SSAuthenticator->main();
+if ($mailbox) {
+    SSAuthenticator::Mailbox::sendMessage($message, @params);
+}
+else {
+    SSAuthenticator->main();
+}

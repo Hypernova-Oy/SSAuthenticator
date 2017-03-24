@@ -9,7 +9,7 @@ use SSAuthenticator::Greetings;
 
 
 
-my $defaultConfTempFile = t::Examples::writeBadConnectionTimeoutConf();
+my $defaultConfTempFile = t::Examples::writeConf();
 SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
 
