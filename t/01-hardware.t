@@ -12,7 +12,7 @@ use SSAuthenticator::Config;
 my $defaultConfTempFile = t::Examples::writeDefaultConf();
 SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
-SSAuthenticator::openLogger(-1); #Show only fatal errors. If you have problems with these tests. Give parameter 2 for debug logging.
+#$ENV{SSA_LOG_LEVEL} = -4; #Debug verbosity
 
 subtest "Manually inspect LEDs", \&ledInspection;
 sub ledInspection {

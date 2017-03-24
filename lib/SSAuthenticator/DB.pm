@@ -8,8 +8,9 @@ package SSAuthenticator::DB;
 use Modern::Perl;
 
 use Data::Dumper;
-use Log::Log4perl qw(:easy);
 use DBM::Deep;
+
+use SSLog;
 
 =head1 SSAuthenticator::DB
 
@@ -17,7 +18,7 @@ Manage database access for this daemon
 
 =cut
 
-Log::Log4perl->easy_init($ERROR);
+my $l = SSLog->get_logger(); #Package logger
 
 my $CARDNUMBER_FILE = "/var/cache/ssauthenticator/patron.db";
 sub getDB {

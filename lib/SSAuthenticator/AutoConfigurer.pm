@@ -8,17 +8,17 @@
 package SSAuthenticator::AutoConfigurer;
 
 use Modern::Perl;
-use Log::Log4perl qw(:easy);
 use Device::SerialPort qw( :PARAM :STAT 0.07 );
 
-Log::Log4perl->easy_init($ENV{SSA_LOG_LEVEL} || $DEBUG);
+use SSLog;
+my $l = SSLog->get_logger(); #Package logger
 
 sub new {
     my ($class) = @_;
     my $self = {};
 
     $self->{scanner} = new Device::SerialPort ("/dev/barcodescanner", 1)
-	|| die("No barcodescanner detected");
+	|| $l->logdie("No barcodescanner detected");
     $self->{scanner}->baudrate(9600);
     $self->{scanner}->parity("none");
     $self->{scanner}->databits(8);
@@ -34,15 +34,15 @@ sub configure {
     configureSettings($self);
     saveAndExitServiceMode($self);
     $self->{scanner}->close()
-	|| die("closing barcode scanner failed");
+	|| $l->logdie("closing barcode scanner failed");
 }
 
 sub setDeviceToServiceMode {
     my ($self) = @_;
-    INFO "Setting scanner to service mode";
+    $l->info("Setting scanner to service mode");
     sendServiceModeSignal($self);
 
-    INFO "Setting baudrate for service mode";
+    $l->info("Setting baudrate for service mode");
     $self->{scanner}->baudrate(115200);
 }
 
@@ -54,7 +54,7 @@ sub sendServiceModeSignal {
 
 sub saveAndExitServiceMode {
     my ($self) = @_;
-    INFO "Saving scanner's settings to RAM and entering normal mode";
+    $l->info("Saving scanner's settings to RAM and entering normal mode");
     my $scanner = $self->{scanner};
 
     #writeCmd($self, "\$Ar\r"); #Saves to permanent memory
@@ -67,7 +67,7 @@ sub saveAndExitServiceMode {
 
 sub configureSettings {
     my ($self) = @_;
-    INFO "Configuring scanner's settings";
+    $l->info("Configuring scanner's settings");
     $self->setGlobalSuffixToLF();
 #    $self->setAimingCoordinates();
     $self->aimingAutoCalibration();
@@ -84,8 +84,8 @@ sub configureSettings {
 
 sub isDataWritten {
     my ($bytesWritten, $sentData) = @_;
-    die "write failed" unless $bytesWritten;
-    die "write incomplete $bytesWritten/".length($sentData) unless $bytesWritten == length($sentData);
+    $l->logdie("write failed")unless $bytesWritten;
+    $l->logdie("write incomplete $bytesWritten/".length($sentData)) unless $bytesWritten == length($sentData);
 }
 
 =head2 isDataRead
@@ -96,8 +96,8 @@ sub isDataWritten {
 
 sub isDataRead {
     my ($bytesRead, $bytesRequested) = @_;
-    die "read failed" unless $bytesRead;
-    die "read incomplete $bytesRead/$bytesRequested" unless $bytesRead == $bytesRequested;
+    $l->logdie("read failed") unless $bytesRead;
+    $l->logdie("read incomplete $bytesRead/$bytesRequested") unless $bytesRead == $bytesRequested;
 }
 
 =head2 setGlobalSuffixToLF
@@ -108,7 +108,7 @@ Adds \n after each barcode read
 
 sub setGlobalSuffixToLF {
     my ($self) = @_;
-    INFO "Setting Global suffix to \\n";
+    $l->info("Setting Global suffix to \\n");
     writeCmd($self, "\$CLFSU0A00000000000000000000000000000000000000\r");
 }
 
@@ -129,11 +129,11 @@ factory, user or custom calibration or setting.
 sub setAimingCoordinates {
     my ($self) = @_;
     my $coordinates = '03760240';
-    INFO "Setting scanner's aiming coordinates to '$coordinates'";
+    $l->info("Setting scanner's aiming coordinates to '$coordinates'");
     writeCmd($self, "\$FA$coordinates\r");
     writeCmd($self, "\$Fa\r");                #Request the coordinates from the reader
     my $savedCoordinates = readMsg($self, 8); #Receive bytes
-    INFO "  Saved '$savedCoordinates'";
+    $l->info("  Saved '$savedCoordinates'");
 }
 
 =head2 aimingAutoCalibration
@@ -148,11 +148,11 @@ Calibration).
 
 sub aimingAutoCalibration {
     my ($self) = @_;
-    INFO "Auto calibrating scanner";
+    $l->info("Auto calibrating scanner");
     writeCmd($self, "\$Fx\r");
     writeCmd($self, "\$Fa\r");             #Request the coordinates from the reader
     my $coordinates = readMsg($self, 8);   #Receive bytes
-    INFO "  Coordinates '$coordinates'";
+    $l->info("  Coordinates '$coordinates'");
 }
 
 =head2 setAutomaticOperatingMode
@@ -171,7 +171,7 @@ configuration of the Transmission Mode parameter.
 
 sub setAutomaticOperatingMode {
     my ($self) = @_;
-    INFO "Setting 'automatic' operating mode";
+    $l->info("Setting 'automatic' operating mode");
     writeCmd($self, "\$CSNRM02\r");
 }
 
@@ -180,7 +180,7 @@ sub writeCmd {
     eval {
         isDataWritten($self->{scanner}->write($cmd), $cmd);
     };
-    die("writeCmd($cmd):> $@") if $@;
+    $l->logdie("writeCmd($cmd):> $@") if $@;
     sleep 1;
 }
 
@@ -194,7 +194,7 @@ Disables all symbologies and allows Code39 without checknum
 
 sub setAllowedSymbologies {
     my ($self) = @_;
-    INFO "Setting allowed symbologies";
+    $l->info("Setting allowed symbologies");
     writeCmd($self, "\$AD\r");     #Disable all symbologies
     writeCmd($self, "\$CC3EN01\r"); #Allow Code 39
     writeCmd($self, "\$CC3CC00\r"); #Check Calculation disabled
@@ -209,7 +209,7 @@ When sending ASCII BEL 0x07 to the barcode reader, it beeps :)
 
 sub setBeepOnASCII_BEL {
     my ($self) = @_;
-    INFO "Allowing beep on ASCII BEL";
+    $l->info("Allowing beep on ASCII BEL");
     writeCmd($self, "\$CR2BB01\r");
 }
 
@@ -219,14 +219,14 @@ sub readMsg {
     eval {
         isDataRead($byteCount_in, $bytes);
     };
-    die("readMsg($bytes):> $@") if $@;
+    $l->logdie("readMsg($bytes):> $@") if $@;
     return $string_in;
 }
 
 sub main {
     my $configurer = AutoConfigurer->new;
     $configurer->configure();
-    INFO "Device configured succesfully!";
+    $l->info("Device configured succesfully!");
 }
 
 __PACKAGE__->main() unless caller;

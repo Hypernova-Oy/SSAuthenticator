@@ -16,7 +16,7 @@ use SSAuthenticator::Mailbox;
 use SSAuthenticator::Config;
 use SSAuthenticator;
 
-SSAuthenticator::openLogger(-1); #Show only fatal errors. If you have problems with these tests. Give parameter 2 for debug logging.
+#$ENV{SSA_LOG_LEVEL} = -4; #Debug verbosity
 
 =head2 07-mailbox.t
 

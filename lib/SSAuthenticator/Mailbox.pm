@@ -7,11 +7,11 @@ package SSAuthenticator::Mailbox;
 use Modern::Perl;
 
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
-use Log::Log4perl qw(:easy);
 
 use File::Basename;
 use File::Slurp;
 
+use SSLog;
 use SSAuthenticator::Config;
 
 =head1 SSAuthenticator::Mailbox
@@ -21,7 +21,7 @@ If there is such a file, parses it, does the given action, and truncates the fil
 
 =cut
 
-Log::Log4perl->easy_init($INFO);
+my $l = SSLog->get_logger(); #Package logger
 
 =head2 checkMailbox
 
@@ -45,7 +45,7 @@ sub checkMailbox {
         next if $file =~ /^(\.|README)/;
 
         $self->dispatch($file, split(/\s+/,$content));
-        DEBUG "checkMailBox() removing '$filePath'";
+        $l->debug("checkMailBox() removing '$filePath'");
         unlink $filePath;
     }
     return 1;
@@ -92,16 +92,16 @@ sub dispatch {
         $subroutineDispatcher = $self->_canDispatch($command);
     };
     if ($@) {
-        ERROR "dispatch() $@";
+        $l->error("dispatch() $@");
         return undef;
     }
     eval {
-        INFO "Mailbox dispatching '$command' with \@params '@params'";
+        $l->info("Mailbox dispatching '$command' with \@params '@params'") if $l->is_info;
         $rv = $self->$subroutineDispatcher(@params);
-        INFO "Mailbox dispatched '$command'. Returned '$rv'";
+        $l->info("Mailbox dispatched '$command'. Returned '$rv'") if $l->is_info;
     };
     if ($@) {
-        FATAL "Mailbox dispatched '$command' died with '$@'";
+        $l->fatal("Mailbox dispatched '$command' died with '$@'");
     }
     return $rv;
 }

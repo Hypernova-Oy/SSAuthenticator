@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright (C) 2016 Koha-Suomi
+# Copyright (C) 2017 Koha-Suomi
 #
 # This file is part of SSAuthenticator.
 #
@@ -48,17 +48,19 @@ use JSON;
 use Data::Dumper;
 use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
-use Log::Log4perl qw(:easy);
 use OLED::Client;
 
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
 use GPIO;
+use SSLog;
 use SSAuthenticator::API;
 use SSAuthenticator::Config;
 use SSAuthenticator::AutoConfigurer;
 use SSAuthenticator::DB;
 use SSAuthenticator::Greetings;
+
+my $l = SSLog->get_logger(); #Package logger
 
 my %messages = (
                             #-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++
@@ -155,13 +157,13 @@ sub showOLEDMsg {
         $rows = 4 if $rows > 4;
 
         for (my $i=0 ; $i<$rows ; $i++) {
-            INFO "showOLEDMsg():> $i: ".$msgs->[$i];
+            $l->info("showOLEDMsg():> $i: ".$msgs->[$i]) if $l->is_info;
             my $rv = $display->printRow($i, $msgs->[$i]);
             $err = 1 unless ($rv =~ /^200/);
         }
         $display->endTransaction();
     };
-    ERROR "showOLEDMsg() $@" if $@;
+    $l->error("showOLEDMsg() $@") if $@;
 
     return $err ? 0 : 1;
 }
@@ -194,10 +196,10 @@ sub _getAccessMsg {
 sub isAuthorized {
     my ($cardNumber) = @_;
     my ($authorization, $cacheUsed) = canUseLibrary($cardNumber);
-    INFO "canUseLibrary() returns \$authorization=".($authorization || '').", \$cacheUsed=".($cacheUsed || '');
+    $l->info("canUseLibrary() returns \$authorization=".($authorization || '').", \$cacheUsed=".($cacheUsed || '')) if $l->is_info;
 
     my $open = isLibraryOpen();
-    INFO "isLibraryOpen() returns \$open=".($open || '');
+    $l->info("isLibraryOpen() returns \$open=".($open || '')) if $l->is_info;
     if ($authorization > 0 && not($open)) {
         $authorization = $open;
     }
@@ -233,15 +235,15 @@ sub canUseLibrary {
         getTimeout(),
         sub {$authorized = isAuthorizedApi($cardNumber)}
     );
-    WARN "isAuthorizedApi() timed out" if $timedOut;
-    INFO "isAuthorizedApi() returns ".($authorized || '');
+    $l->warn("isAuthorizedApi() timed out") if $timedOut;
+    $l->info("isAuthorizedApi() returns ".($authorized || '')) if $l->is_info;
 
     # Check if we got response from REST API
     if (defined $authorized) {
         return ($authorized, $cacheUsed);
     } else {
         $authorized = isAuthorizedCache($cardNumber);
-        INFO "isAuthorizedCache() returns ".($authorized || '');
+        $l->info("isAuthorizedCache() returns ".($authorized || '')) if $l->is_info;
 
         if ($authorized && $authorized != ERR_NOTCACHED) {
             $cacheUsed = 1;
@@ -274,10 +276,10 @@ sub isAuthorizedApi {
     my $status = $httpResponse ? $httpResponse->code() : '';
 
     if ($httpResponse && blessed($httpResponse) && $httpResponse->isa('HTTP::Response')) {
-        INFO "getApiResponse() returns a ".ref($httpResponse)." with \$status=$status, \$permission=$permission, \$err=$err";
+        $l->info("getApiResponse() returns a ".ref($httpResponse)." with \$status=$status, \$permission=$permission, \$err=$err") if $l->is_info;
     }
     else {
-        ERROR "getApiResponse() returns '".($httpResponse || '')."' instead of a HTTP:Response-object!!";
+        $l->error("getApiResponse() returns '".($httpResponse || '')."' instead of a HTTP:Response-object!!") if $l->is_error;
     }
 
     if ($status eq 404) {
@@ -300,11 +302,11 @@ sub isAuthorizedApi {
         return $permission ? OK : ERR_ERR;
     }
     elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
-        ERROR "isAuthorizedApi($cardNumber) REST API returns server error:\n".$httpResponse->as_string;
+        $l->error("isAuthorizedApi($cardNumber) REST API returns server error:\n".$httpResponse->as_string) if $l->is_error;
         return undef;
     }
 
-    ERROR "isAuthorizedApi() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response";
+    $l->error("isAuthorizedApi() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response") if $l->is_error;
     return undef; #For some reason server doesn't respond. Fall back to using cache.
 }
 
@@ -315,11 +317,10 @@ sub decodeContent {
     $responseContent = $response->{_content} unless $responseContent;
 
     if ($responseContent) {
-        INFO "decodeContent() \$responseContent=$responseContent";
+        $l->info("decodeContent() \$responseContent=$responseContent") if $l->is_info;
         return JSON::decode_json $responseContent;
     } else {
-        FATAL "decodeContent() \$responseContent=undef";
-        die "decodeContent() \$responseContent is not defined!!";
+        $l->logdie("decodeContent() \$responseContent is not defined!!");
     }
 }
 
@@ -335,10 +336,10 @@ sub isAuthorizedCache {
     my ($cardNumber) = @_;
     if (db()->exists($cardNumber)) {
         my $patronInfo = db()->get($cardNumber);
-        DEBUG "isAuthorizedCache() \$cardNumber=$cardNumber exists and has \$status=".$$patronInfo{access};
+        $l->debug("isAuthorizedCache() \$cardNumber=$cardNumber exists and has \$status=".$$patronInfo{access}) if $l->is_debug;
         return $$patronInfo{access};
     } else {
-        DEBUG "isAuthorizedCache() \$cardNumber=$cardNumber not cached";
+        $l->debug("isAuthorizedCache() \$cardNumber=$cardNumber not cached") if $l->is_debug;
         return ERR_NOTCACHED;
     }
 }
@@ -366,14 +367,14 @@ sub playRTTTL {
     my ($song) = @_;
     system('rtttl-player','-p',config()->param('RTTTL-PlayerPin'),'-o',"song-$song");
     if ($? == -1) {
-        WARN "failed to execute: $!\n";
+        $l->warn("failed to execute: $!\n") if $l->is_warn;
     }
     elsif ($? & 127) {
-        WARN sprintf "rtttl-player died with signal %d, %s coredump\n",
-        ($? & 127),  ($? & 128) ? 'with' : 'without';
+        $l->warn(sprintf "rtttl-player died with signal %d, %s coredump\n",
+        ($? & 127),  ($? & 128) ? 'with' : 'without') if $l->is_warn;
     }
     else {
-        WARN sprintf "rtttl-player exited with value %d\n", $? >> 8;
+        $l->warn(sprintf "rtttl-player exited with value %d\n", $? >> 8) if $l->is_warn;
     };
 }
 
@@ -402,7 +403,7 @@ sub millisecs2secs {
 
 sub updateCache {
     my ($cardNumber, $authStatus) = @_;
-    DEBUG "updateCache() $cardNumber cached using \$authStatus=$authStatus";
+    $l->debug("updateCache() $cardNumber cached using \$authStatus=$authStatus") if $l->is_debug;
     db()->put($cardNumber, {time => localtime,
                         access => $authStatus});
 }
@@ -417,10 +418,10 @@ sub controlAccess {
     my ($authorizationStatus, $cacheUsed) = isAuthorized($cardNumber);
 
     if ($authorizationStatus > 0) {
-        INFO "controlAccess($cardNumber):> Granting access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef');
+        $l->info("controlAccess($cardNumber):> Granting access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef')) if $l->is_info;
         grantAccess($authorizationStatus, $cacheUsed);
     } else {
-        INFO "controlAccess($cardNumber):> Denying access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef');
+        $l->info("controlAccess($cardNumber):> Denying access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef')) if $l->is_info;
         denyAccess($authorizationStatus, $cacheUsed);
     }
 }
@@ -429,10 +430,10 @@ sub getBarcodeSeparator {
     # TODO: Check if param exists before comparing.
     my $conf = config();
     if ($conf->param('CarriageReturnAsSeparator') && $conf->param('CarriageReturnAsSeparator') eq "true") {
-        INFO "using \\r as barcode separator";
+        $l->info("using \\r as barcode separator") if $l->is_info;
         return "\r";
     } else {
-        INFO "using \\n as barcode separator";
+        $l->info("using \\n as barcode separator") if $l->is_info;
         return "\n";
     }
 }
@@ -440,7 +441,7 @@ sub getBarcodeSeparator {
 sub configureBarcodeScanner {
     my $configurer = SSAuthenticator::AutoConfigurer->new;
     $configurer->configure();
-    INFO "Barcode scanner configured";
+    $l->info("Barcode scanner configured") if $l->is_info;
 }
 
 =head2 changeLanguage
@@ -461,26 +462,15 @@ sub config {
     return SSAuthenticator::Config::getConfig();
 }
 
-sub openLogger {
-    my ($verbose) = @_;
-    $ENV{SSA_LOG_LEVEL} = $verbose if (defined($verbose));
-    Log::Log4perl->easy_init($ERROR) && return if not($ENV{SSA_LOG_LEVEL});
-    Log::Log4perl->easy_init($FATAL) && return if $ENV{SSA_LOG_LEVEL} == -1;
-    Log::Log4perl->easy_init($INFO)  && return if $ENV{SSA_LOG_LEVEL} == 1;
-    Log::Log4perl->easy_init($DEBUG) && return if $ENV{SSA_LOG_LEVEL} == 2;
-}
-
 sub setDefaultLanguage {
     changeLanguage(
         config()->param('DefaultLanguage'),
         'UTF-8',
     );
-    INFO "setDefaultLanguage() ".config()->param('DefaultLanguage');
+    $l->info("setDefaultLanguage() ".config()->param('DefaultLanguage')) if $l->is_info;
 }
 
 sub main {
-    openLogger( config()->param('Verbose') );
-
     local $/ = getBarcodeSeparator();
 
     showInitializingMsg('STARTING'); sleep 2;
@@ -493,12 +483,12 @@ sub main {
         configureBarcodeScanner();
     };
     if ($@) {
-        FATAL "$@";
+        $l->fatal("$@");
         showInitializingMsg('ERROR');
         exit(1);
     }
 
-    INFO "main() Entering main loop";
+    $l->info("main() Entering main loop");
     showInitializingMsg('FINISHED');
     while (1) {
         my $device;
@@ -508,7 +498,7 @@ sub main {
             last if $device;
             sleep 1;
         }
-        ERROR "main() No barcode reader attached" && exit(1) unless $device;
+        $l->error("main() No barcode reader attached") && exit(1) unless $device;
         my $cardNumber = "";
         if (timeout_call(
             30,
@@ -518,22 +508,17 @@ sub main {
         }
         if ($cardNumber) {
             chomp($cardNumber);
-            INFO "main() Read barcode '$cardNumber'";
+            $l->info("main() Read barcode '$cardNumber'") if $l->is_info;
 
             eval {
                 controlAccess($cardNumber);
             };
             if ($@) {
-                FATAL "controlAccess($cardNumber) $@";
+                $l->fatal("controlAccess($cardNumber) $@");
             }
         }
         close $device; # Clears buffer
     }
-
-    closelog();
 }
-
-
-__PACKAGE__->main() unless caller;
 
 1;

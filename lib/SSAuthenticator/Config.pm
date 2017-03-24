@@ -9,7 +9,14 @@ use Modern::Perl;
 
 use Config::Simple;
 use Data::Dumper;
-use Log::Log4perl;
+use SSLog;
+
+
+
+my $config;
+my $configFile = "/etc/ssauthenticator/daemon.conf";
+my $l = SSLog->get_logger(); #Package logger
+
 
 
 =head1 SSAuthenticator::Config
@@ -18,10 +25,6 @@ Manage configuration for this daemon
 
 =cut
 
-my $l; #Package logger
-
-my $config;
-my $configFile = "/etc/ssauthenticator/daemon.conf";
 sub setConfigFile {
     my ($overloadedConfigFile) = @_;
     my $oldConfigFile = $configFile;
@@ -40,10 +43,19 @@ Reads the config file and returns it.
 
 sub getConfig {
     unless ($config) {
-        $config = new Config::Simple($configFile)
-            || die Config::Simple->error(), ".\n",
-            "Please check the syntax in /etc/ssauthenticator/daemon.conf.";
-        _isConfigValid($config);
+        eval {
+            $config = new Config::Simple($configFile);
+        };
+        if ($@ || Config::Simple->error()) {
+            my @errs;
+            push(@errs, $@) if $@;
+            push(@errs, Config::Simple->error()) if Config::Simple->error();
+            push(@errs, "\$configFile '$configFile' doesn't exists!") unless -e $configFile;
+            push(@errs, "\$configFile '$configFile' is not readable!") unless -r $configFile;
+            die "FATAL: getConfig() '".join("\n",@errs)."'\nPlease check the syntax in '$configFile'";
+        }
+
+        die "daemon.conf is invalid. See STDERR." unless(_isConfigValid($config));
     }
     return $config;
 }
@@ -62,36 +74,11 @@ sub unloadConfig {
     $config = undef;
 }
 
-sub initLogger {
-    my ($log4perlConfig, $verbose) = @_;
-    Log::Log4perl->init_and_watch($log4perlConfig, 10);
-
-    $verbose = $ENV{SSA_LOG_LEVEL} if (defined($ENV{SSA_LOG_LEVEL}));
-    Log::Log4perl->appender_thresholds_adjust($verbose);
-
-    $l = Log::Log4perl->get_logger() unless $l;
-}
-
 sub _isConfigValid() {
     my ($c) = @_;
     my $returnValue = 1;
 
     my @pwuid = getpwuid($<);
-
-    ##Log4perlConfig first so we can instantiate it
-    my $log4perlConfig = $c->param('Log4perlConfig');
-    if (not($log4perlConfig)) {
-        die "Log4perlConfig is undefined!";
-    }
-    elsif (! -e $log4perlConfig) {
-        die "Log4perlConfig '$log4perlConfig' doesn't exist";
-        $returnValue = 0;
-    }
-    elsif (! -r $log4perlConfig) {
-        die "Log4perlConfig '$log4perlConfig' is not readable by ".($pwuid[0] || $pwuid[1]);
-        $returnValue = 0;
-    }
-    initLogger($log4perlConfig, $c->param('Verbose') || 0);
 
     ##All mandatory params
     my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey',
@@ -101,9 +88,23 @@ sub _isConfigValid() {
                   'ConnectionTimeout');
     foreach my $param (@params) {
         if (not(defined($c->param($param)))) {
-            $l->error("$param not defined in daemon.conf") if $l->is_error();
+            warn "$param not defined in daemon.conf";
             $returnValue = 0;
         }
+    }
+
+    ##Log4perlConfig first so we can instantiate it
+    my $log4perlConfig = $c->param('Log4perlConfig');
+    if (not($log4perlConfig)) {
+        warn "Log4perlConfig is undefined!";
+    }
+    elsif (! -e $log4perlConfig) {
+        warn "Log4perlConfig '$log4perlConfig' doesn't exist";
+        $returnValue = 0;
+    }
+    elsif (! -r $log4perlConfig) {
+        warn "Log4perlConfig '$log4perlConfig' is not readable by ".($pwuid[0] || $pwuid[1]);
+        $returnValue = 0;
     }
 
     ##ConnectionTimeout
@@ -111,11 +112,11 @@ sub _isConfigValid() {
     if (not($timeout) || not($timeout =~ /\d+/)) {
         my $reason = "ConnectionTimeout '$timeout' is invalid. " .
             "Valid value is an integer.";
-        $l->error($reason) if $l->is_error;
+        warn $reason;
         $returnValue = 0;
     } elsif ($timeout > 30000) {
         my $reason = "ConnectionTimeout '$timeout' is too big. Max 30000 ms";
-        $l->error($reason) if $l->is_error;
+        warn $reason;
         $returnValue = 0;
     }
 
@@ -123,27 +124,27 @@ sub _isConfigValid() {
     my $mailboxDir = $c->param('MailboxDir');
     if    (! -e $mailboxDir) {
         if (! mkdir($mailboxDir)) {
-            $l->error("Directory 'MailboxDir' '$mailboxDir' doesn't exist and cannot be created '$!'") if $l->is_error;
+            warn "Directory 'MailboxDir' '$mailboxDir' doesn't exist and cannot be created '$!'";
             $returnValue = 0;
         }
         else {
-            $l->info("Directory 'MailboxDir' '$mailboxDir' created for your convenience") if $l->is_info;
+            warn "Directory 'MailboxDir' '$mailboxDir' created for your convenience";
         }
     }
     if (! -d $mailboxDir) {
-        $l->error("Directory 'MailboxDir' '$mailboxDir' is not a directory") if $l->is_error;
+        warn "Directory 'MailboxDir' '$mailboxDir' is not a directory";
         $returnValue = 0;
     }
     elsif (! -w $mailboxDir) {
-        $l->error("Directory 'MailboxDir' '$mailboxDir' is not writable by ".($pwuid[0] || $pwuid[1])) if $l->is_error;
+        warn "Directory 'MailboxDir' '$mailboxDir' is not writable by ".($pwuid[0] || $pwuid[1]);
         $returnValue = 0;
     }
     elsif (! -r $mailboxDir) {
-        $l->error("Directory 'MailboxDir' '$mailboxDir' is not readable by ".($pwuid[0] || $pwuid[1])) if $l->is_error;
+        warn "Directory 'MailboxDir' '$mailboxDir' is not readable by ".($pwuid[0] || $pwuid[1]);
         $returnValue = 0;
     }
     elsif (! -x $mailboxDir) {
-        $l->error("Directory 'MailboxDir' '$mailboxDir' is not executable by ".($pwuid[0] || $pwuid[1])) if $l->is_error;
+        warn "Directory 'MailboxDir' '$mailboxDir' is not executable by ".($pwuid[0] || $pwuid[1]);
         $returnValue = 0;
     }
 

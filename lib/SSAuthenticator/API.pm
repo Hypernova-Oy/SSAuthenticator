@@ -13,6 +13,10 @@ use Digest::SHA;
 use LWP::UserAgent;
 use HTTP::Request;
 
+use SSLog;
+
+my $l = SSLog->get_logger(); #Package logger
+
 sub _makeSignature {
     my ($method, $userid, $headerXKohaDate, $apiKey) = @_;
 

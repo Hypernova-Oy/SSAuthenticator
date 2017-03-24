@@ -17,7 +17,7 @@ use t::Examples;
 use t::Mocks;
 use SSAuthenticator;
 
-SSAuthenticator::openLogger(-1); #Show only fatal errors. If you have problems with these tests. Give parameter 2 for debug logging.
+#$ENV{SSA_LOG_LEVEL} = -4; #Debug verbosity
 
 my $respTest = {}; #package variable describing the next scenario
 my $updateCacheTriggered = 0; #Keep track if the cache was actually updated. Occasionally return values can be the same as cached values even if no cache was updated, leading to a lot of confusion.
