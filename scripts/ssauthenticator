@@ -9,15 +9,19 @@ use Carp;
 use Getopt::Long qw(:config no_ignore_case);
 
 use SSAuthenticator;
+use SSAuthenticator::Mailbox;
 
-my ($help, $message);
+my ($help, $message, $verbose);
 my @params;
 
 GetOptions(
     'h|help'                      => \$help,
+    'v|verbose=i'                 => \$verbose,
     'm|message=s'                 => \$message,
     'p|params=s'                  => \@params,
 );
+
+$ENV{SSA_LOG_LEVEL} = $verbose if $verbose;
 
 my $usage = <<USAGE;
 
@@ -27,6 +31,9 @@ SSAuthenticator is a program that controls access to a library using Koha instan
 REST API and its local cache.
 
   -h --help               HELP!
+  -v --verbose            Int, sets the verbosity level:
+                            -1 less verbose
+                            2  most verbose
 
 Mailbox-feature
 
@@ -51,7 +58,7 @@ if ($help) {
   exit 0;
 }
 
-if ($mailbox) {
+if ($message) {
     SSAuthenticator::Mailbox::sendMessage($message, @params);
 }
 else {

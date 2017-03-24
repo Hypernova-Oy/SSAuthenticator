@@ -42,6 +42,7 @@ test:
 
 configure:
 	mkdir -p /$(confDir)
+	cp $(confDir)/log4perl.conf /$(confDir)/
 	cp $(confDir)/daemon.conf /$(confDir)/
 	cp $(systemdServiceDir)/$(programName).service /$(systemdServiceDir)/$(programName).service
 

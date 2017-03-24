@@ -11,7 +11,7 @@ use Modern::Perl;
 use Log::Log4perl qw(:easy);
 use Device::SerialPort qw( :PARAM :STAT 0.07 );
 
-Log::Log4perl->easy_init($DEBUG) if $ENV{SSA_LOG_LEVEL};
+Log::Log4perl->easy_init($ENV{SSA_LOG_LEVEL} || $DEBUG);
 
 sub new {
     my ($class) = @_;
