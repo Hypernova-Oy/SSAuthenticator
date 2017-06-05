@@ -38,13 +38,20 @@ sub get_logger {
 
 sub initLogger {
     my $config = SSAuthenticator::Config::getConfig();
+    my $l4pf = $config->param('Log4perlConfig');
 
+    #Incredible! The config file cannot be properly read unless it is somehow fiddled with from the operating system side.
+    #Mainly fixes t/10-permissions.b.t
+    #Where the written temp log4perl-config file cannot be read by Log::Log4perl
+    `/usr/bin/touch $l4pf` if -e $l4pf;
+
+#print Data::Dumper::Dumper($config);
 #use File::Slurp;
-#warn $config->param('Log4perlConfig');
 #warn File::Slurp::read_file($config->param('Log4perlConfig'));
 #$DB::single=1;
 #sleep 1;
-    Log::Log4perl->init_and_watch($config->param('Log4perlConfig'), 10);
+
+    Log::Log4perl->init_and_watch($l4pf, 10);
     my $verbose = $ENV{SSA_LOG_LEVEL} || $config->param('Verbose');
     Log::Log4perl->appender_thresholds_adjust($verbose);
 }

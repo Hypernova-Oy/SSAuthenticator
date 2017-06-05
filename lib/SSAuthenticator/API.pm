@@ -71,7 +71,15 @@ sub getApiResponse {
     $request->header('Content-Length' => length('cardnumber='.$cardNumber));
     $request->content('cardnumber='.$cardNumber);
 
+    if ($l->is_trace) {
+        $l->trace("Sending request: ".$request->as_string());
+    }
+
     my $response = $ua->request($request);
+
+    if ($l->is_debug) {
+        $l->debug("Got response: ".$response->as_string());
+    }
 
     return $response;
 }

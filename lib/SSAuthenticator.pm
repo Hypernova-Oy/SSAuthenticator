@@ -269,7 +269,6 @@ sub isAuthorizedApi {
     my ($cardNumber) = @_;
 
     my $httpResponse = SSAuthenticator::API::getApiResponse($cardNumber);
-    #warn Data::Dumper::Dumper($httpResponse);
 
     my $body = $httpResponse ? decodeContent($httpResponse) : {};
     my $err = $body->{error} || '';

@@ -110,13 +110,13 @@ sub setLog4perlConfig {
 log4perl.rootLogger = WARN, SCREEN
 
 log4perl.appender.SCREEN = Log::Log4perl::Appender::ScreenColoredLevels
+log4perl.appender.SCREEN.layout=PatternLayout
+log4perl.appender.SCREEN.layout.ConversionPattern=[%d] [%p] %m{indent} [%M]%n
 log4perl.appender.SCREEN.utf8=1
 log4perl.appender.SCREEN.stderr=0
 
 
 CONF
-#log4perl.appender.SCREEN.layout=PatternLayout
-#log4perl.appender.SCREEN.layout.ConversionPattern=[\%d] [\%p] \%m\{indent\} \%l \%M \%n
 
     $tempLog4perlFile = _writeTempConf($conf);
     return $tempLog4perlFile;
