@@ -44,7 +44,7 @@ use Modern::Perl;
 use Scalar::Util qw(blessed);
 use POSIX qw(LC_MESSAGES LC_ALL);
 use Config::Simple;
-use JSON;
+use JSON::XS;
 use Data::Dumper;
 use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
@@ -231,11 +231,21 @@ sub canUseLibrary {
 
     my $authorized;
     my $cacheUsed;
+    my $timedOut;
 
-    my $timedOut = timeout_call(
-        getTimeout(),
-        sub {$authorized = isAuthorizedApi($cardNumber)}
-    );
+    if ($ENV{SSA_TEST_MODE}) { #The complexities with eval-blocks, mock-modules, Log4perl and Perl-debugger together make a unique cocktail where things break unexpectedly. Cut complexity from test runs.
+        my $start = time;
+        $authorized = isAuthorizedApi($cardNumber);
+        my $duration = time - $start;
+        $timedOut = ($duration >= getTimeout()) ? 1 : 0;
+    }
+    else {
+        $timedOut = timeout_call(
+            getTimeout(),
+            sub {$authorized = isAuthorizedApi($cardNumber)}
+        );
+    }
+
     $l->warn("isAuthorizedApi() timed out") if $timedOut;
     $l->info("isAuthorizedApi() returns ".($authorized || '')) if $l->is_info;
 
@@ -310,18 +320,45 @@ sub isAuthorizedApi {
     return undef; #For some reason server doesn't respond. Fall back to using cache.
 }
 
+=head2 decodeContent
+
+Extracts the body parameters from the given HTTP::Response-object
+
+@RETURNS HASHRef of body parameters decoded or an empty HASHRef is errors happened.
+@DIE     if HTTP::Response content is not valid JSON or if content doesn't exist
+
+=cut
+
+my $jsonParser = JSON::XS->new();
 sub decodeContent {
     my ($response) = @_;
 
-    my $responseContent = $response->decoded_content;
-    $responseContent = $response->{_content} unless $responseContent;
-
-    if ($responseContent) {
-        $l->info("decodeContent() \$responseContent=$responseContent") if $l->is_info;
-        return JSON::decode_json $responseContent;
-    } else {
-        $l->logdie("decodeContent() \$responseContent is not defined!!");
+    my $responseContent = $response->decoded_content(default_charset => 'utf8');
+    $l->trace("\$responseContent: ".Data::Dumper::Dumper($responseContent)) if $l->is_trace;
+    unless ($responseContent) {
+        $responseContent = $response->{_content};
+        $l->info("Couldn't decode \$responseContent, working with raw content: ".Data::Dumper::Dumper($responseContent)) if $l->is_info;
     }
+
+    my $body;
+    eval {
+        die "\$responseContent is not defined!" unless $responseContent;
+        $l->info("decodeContent() \$responseContent=$responseContent") if $l->is_info;
+        $body = $jsonParser->decode($responseContent);
+    };
+    #In some strange cases the $responseContent is already a HASHRef of decoded JSON parameters.
+    #There is a ghost in the shell making HTTP::Response return HASHRefs on one request, and then again
+    #decoded strings of HTTP Request body on some other requests.
+    if ($@) {
+        $l->error("Cannot decode HTTP::Response:\n".$response->as_string()."\nCONTENT: ".Data::Dumper::Dumper($responseContent)."\nJSON::decode_json ERROR: ".Data::Dumper::Dumper($@)) if $l->is_error();
+
+        if (ref($responseContent) eq 'HASH') {
+            $body = $responseContent;
+            $l->error("Looks like \$responseContent is already a HASHRef. Trying to make it work.") if $l->is_error();
+        }
+    }
+
+    return $body;
 }
 
 sub isLibraryOpen {

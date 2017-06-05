@@ -7,6 +7,7 @@
 
 BEGIN {
     $ENV{SSA_LOG_LEVEL} = -4; #Logging verbosity adjustment 4 is fatal -4 is debug always
+    $ENV{SSA_TEST_MODE} = 1;
 }
 
 use Modern::Perl;

@@ -23,15 +23,12 @@ sub AUTOLOAD {
          longmess "SSLog invoked with an unblessed reference??";
     }
     unless ($l->{_log}) {
-        my $log = get_logger($l);
-        $l->{_log} = $log;
+        $l->{_log} = get_logger($l);
     }
     return $l->{_log}->$method(@_);
 }
 
 sub get_logger {
-#    warn "get_logger\n";
-    my $l = shift;
     initLogger() unless Log::Log4perl->initialized();
     return Log::Log4perl->get_logger();
 }
@@ -51,7 +48,11 @@ sub initLogger {
 #$DB::single=1;
 #sleep 1;
 
-    Log::Log4perl->init_and_watch($l4pf, 10);
+    if ($ENV{SSA_TEST_MODE}) {
+        Log::Log4perl->init($l4pf); #init_and_watch causes Log::Log4perl to fail spectacularly trying to find log level is_INFO which doesn't exist.
+    } else {
+        Log::Log4perl->init_and_watch($l4pf, 10);
+    }
     my $verbose = $ENV{SSA_LOG_LEVEL} || $config->param('Verbose');
     Log::Log4perl->appender_thresholds_adjust($verbose);
 }

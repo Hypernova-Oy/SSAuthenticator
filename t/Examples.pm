@@ -45,11 +45,19 @@ RedLEDPin 17
 DoorPin 25
 RTTTL-PlayerPin 1
 Verbose 0
-ConnectionTimeout 3
+ConnectionTimeout 5
 RandomGreetingChance 50
 MailboxDir $dir
 DefaultLanguage en_US
 Log4perlConfig $log4perl
+
+ircserver irc.oftc.net
+ircport 6667
+ircchannels #kohasuomi
+ircnick toveri-testibot-epsilon
+ircname Toveri Testibottinen Epsilon
+ircignore_list ,
+ircaddress kivilahtio
 
 CONF
 }
@@ -107,7 +115,7 @@ sub createTestFile {
 sub setLog4perlConfig {
     my $conf = <<CONF;
 
-log4perl.rootLogger = WARN, SCREEN
+log4perl.rootLogger = TRACE, SCREEN
 
 log4perl.appender.SCREEN = Log::Log4perl::Appender::ScreenColoredLevels
 log4perl.appender.SCREEN.layout=PatternLayout
