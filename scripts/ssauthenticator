@@ -28,7 +28,12 @@ my $usage = <<USAGE;
 SSAuthenticator - library access control system
 
 SSAuthenticator is a program that controls access to a library using Koha instance's
-REST API and its local cache.
+REST API and SSAuthenticator's local cache.
+
+This scripts starts the SSAuthenticator-daemon.
+Firstly it reads system configurations from /etc/ssauthenticator
+Then establishes logging and proceeds to do barcode reader autoconfiguration, if it hasn't been
+autoconfigured yet.
 
   -h --help               HELP!
   -v --verbose            Int, sets the verbosity level:

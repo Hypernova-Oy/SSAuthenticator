@@ -9,32 +9,122 @@ package SSAuthenticator::AutoConfigurer;
 
 use Modern::Perl;
 use Device::SerialPort qw( :PARAM :STAT 0.07 );
+use Try::Tiny;
+use Scalar::Util qw(blessed weaken);
 
-use SSLog;
-my $l = bless({}, 'SSLog');
+
+use SSAuthenticator::Exception::BarcodeReader::WriteFailed;
+use SSAuthenticator::Exception::BarcodeReader::WriteIncomplete;
+use SSAuthenticator::Exception::BarcodeReader::ReadFailed;
+use SSAuthenticator::Exception::BarcodeReader::ReadIncomplete;
+use SSAuthenticator::Exception::BarcodeReader::Configuration::Acknowledgement;
+use SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored;
+
+
+=head1 IN THIS FILE
+
+This standalone static module autoconfigures the given barcode reader to be used with SSAuthenticator.
+
+It is intended to be used when SSAuthenticator starts,
+or when a barcode reader needs to be tested, but the complete SSAuthenticator dependency chain is not needed.
+
+It runs a MD5 hash of itself (this PACKAGE) and stores it to the system configuration dir (/etc/ssauthenticator).
+This is compared when SSAuthenticator starts to the fresh MD5 hash of itself, to see if the AutoConfigurer has
+changed and changes need to be updated to the barcode reader.
+
+If this is ran manually, the behaviour can be overridden and autoconfiguration forced.
+
+=cut
+
+#Try loading SSLog, but if it cannot be loaded, then simply log to STDOUT
+use Log::Log4perl qw(:levels);
+my $l;
+eval {
+    require SSAuthenticator::Config;
+    require SSLog;
+    $l = bless({}, 'SSLog');
+};
+if ($@) {
+    Log::Log4perl->easy_init;
+    $l = Log::Log4perl->get_logger($ERROR);
+    $l->info("Loading SSLog failed, using Log::Log4perl->easy_init(). This is normal when autoconfiguring barcode reader from outside the SSAuthenticator-daemon.");
+    Log::Log4perl->appender_thresholds_adjust(-1*$ENV{SSA_LOG_LEVEL});
+
+    $l->trace("SSLog instantiation failed because of '$@'");
+}
+
+
 
 sub new {
-    my ($class) = @_;
+    my ($class, $device) = @_;
     my $self = {};
+    bless($self, $class);
 
-    $self->{scanner} = new Device::SerialPort ("/dev/barcodescanner", 1)
-	|| $l->logdie("No barcodescanner detected");
-    $self->{scanner}->baudrate(9600);
-    $self->{scanner}->parity("none");
-    $self->{scanner}->databits(8);
-    $self->{scanner}->stopbits(1);
-    $self->{scanner}->handshake('rts');
+    $device = "/dev/barcodescanner" unless $device;
+    $self->{scanner} = Device::SerialPort->new($device, 1)
+        || $l->logdie("No barcodescanner '$device' detected");
+    $self->s->baudrate(9600);
+    $self->s->parity("none");
+    $self->s->databits(8);
+    $self->s->stopbits(1);
+    $self->s->handshake('rts');
 
-    return bless($self, $class);
+    #Params for reading input
+    $self->s->read_char_time(0);     # don't wait for each character
+    $self->s->read_const_time(5000); # wait a maximum of this milliseconds before failing the read()-request
+
+    #Activate and validate connection params
+    $self->s->write_settings();
+
+    #Where to save the configured changes?
+    $self->{_persistence} = 'RAM' || 'Flash';
+    #$self->{_persistence} = 'Flash';
+    return $self;
 }
+
+sub s {
+    return $_[0]->{scanner};
+}
+
+=head2 reload
+
+Reloads the barcode reader, but setting it to service mode and exitting.
+
+=cut
+
+sub reload {
+    my ($self) = @_;
+    $self->setDeviceToServiceMode();
+    $self->exitServiceMode();
+}
+
+=head2 configure
+
+  $ac->configure();
+
+Configures the given barcode reader.
+
+@THROWS SSAuthenticator::Exception on failure
+
+=cut
 
 sub configure {
     my ($self) = @_;
-    setDeviceToServiceMode($self);
-    configureSettings($self);
-    saveAndExitServiceMode($self);
-    $self->{scanner}->close()
-	|| $l->logdie("closing barcode scanner failed");
+    $self->setDeviceToServiceMode();
+
+    try {
+        $self->configureSettings();
+        $self->saveAndExitServiceMode();
+
+    } catch {
+        $self->exitServiceMode();
+        die $_ unless blessed($_);
+        $_->rethrow();
+
+    } finally {
+        $self->s->close()
+            || $l->logdie("closing barcode scanner failed");
+    };
 }
 
 sub setDeviceToServiceMode {
@@ -43,61 +133,82 @@ sub setDeviceToServiceMode {
     sendServiceModeSignal($self);
 
     $l->info("Setting baudrate for service mode");
-    $self->{scanner}->baudrate(115200);
+    $self->s->baudrate(115200);
+    $self->s->write_settings();
 }
 
 sub sendServiceModeSignal {
     my ($self) = @_;
-    writeCmd($self, "\$S\r");
-    sleep 3;
+    sendCmd($self, "\$S\r");
+#    sleep 3;
+}
+
+sub exitServiceMode {
+    my ($self) = @_;
+
+    $l->info("Discarding changes and exiting service mode");
+    sendCmd($self, "\$s\r");
+
+    $self->_restoreNormalConnectionParams();
 }
 
 sub saveAndExitServiceMode {
     my ($self) = @_;
+
+    if ($self->{_persistence} =~ /RAM/i) {
+        $self->saveToRAMAndExitServiceMode();
+    }
+    elsif ($self->{_persistence} =~ /Flash/i) {
+        $self->saveToFlashAndExitServiceMode();
+    }
+    else {
+        die "Unknown value for \$persistence '$self->{_persistence}'. Don't know how to save changes.";
+    }
+}
+
+sub saveToFlashAndExitServiceMode {
+    my ($self) = @_;
+
+    $l->info("Saving scanner's settings to Flash and entering normal mode");
+    try {
+        sendCmd($self, "\$Ar\r"); #Saves to permanent memory
+    } catch {
+        warn $_->error, "\n", $_->trace->as_string, "\n";
+        die $_ unless blessed($_);
+        if ($_->isa('SSAuthenticator::Exception::BarcodeReader::WriteFailed')) {
+            #This might be ok, because saving on Flash boots the device?
+        }
+        $_->rethrow();
+    };
+
+    $self->_restoreNormalConnectionParams();
+}
+
+sub saveToRAMAndExitServiceMode {
+    my ($self) = @_;
+
     $l->info("Saving scanner's settings to RAM and entering normal mode");
-    my $scanner = $self->{scanner};
+    sendCmd($self, "\$r01\r"); #Saves to RAM, which taxes the flash-memory's write-cycles less
+    #sleep 3; # exiting service mode takes some time
 
-    #writeCmd($self, "\$Ar\r"); #Saves to permanent memory
-    writeCmd($self, "\$r01\r"); #Saves to RAM, which taxes the flash-memory's write-cycles less
+    $self->_restoreNormalConnectionParams();
+}
 
-    sleep 3; # exiting service mode takes some time
-
-    $scanner->baudrate(9600);
+sub _restoreNormalConnectionParams {
+    my ($self) = @_;
+    $self->s->baudrate(9600);
+    $self->s->write_settings();
 }
 
 sub configureSettings {
     my ($self) = @_;
     $l->info("Configuring scanner's settings");
     $self->setGlobalSuffixToLF();
-#    $self->setAimingCoordinates();
-    $self->aimingAutoCalibration();
+    $self->setAimingCoordinates();
+#    $self->aimingAutoCalibration();
     $self->setAutomaticOperatingMode();
     $self->setAllowedSymbologies();
     $self->setBeepOnASCII_BEL(1);
-}
-
-=head2 isDataWritten
-
-@THROWS die if write 'failed' or was 'incomplete'
-
-=cut
-
-sub isDataWritten {
-    my ($bytesWritten, $sentData) = @_;
-    $l->logdie("write failed") unless $bytesWritten;
-    $l->logdie("write incomplete $bytesWritten/".length($sentData)) unless $bytesWritten == length($sentData);
-}
-
-=head2 isDataRead
-
-@THROWS die if read 'failed' or was 'incomplete'
-
-=cut
-
-sub isDataRead {
-    my ($bytesRead, $bytesRequested) = @_;
-    $l->logdie("read failed") unless $bytesRead;
-    $l->logdie("read incomplete $bytesRead/$bytesRequested") unless $bytesRead == $bytesRequested;
 }
 
 =head2 setGlobalSuffixToLF
@@ -109,7 +220,17 @@ Adds \n after each barcode read
 sub setGlobalSuffixToLF {
     my ($self) = @_;
     $l->info("Setting Global suffix to \\n");
-    writeCmd($self, "\$CLFSU0A00000000000000000000000000000000000000\r");
+    my $suffixHexes = "2B2B0A0000000000000000000000000000000000";
+    #my $suffixHexes = "0A00000000000000000000000000000000000000";
+    #Write to RAM
+    my $response = sendCmd($self, "\$CLFSU$suffixHexes\r");
+    #Check that RAM was actually written
+    $response = sendCmd($self, "\$cLFSU\r", 43);
+    $l->info("  Value '$response' was persisted.");
+
+    unless ($response =~ /$suffixHexes$/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault($suffixHexes, $response);
+    }
 }
 
 =head2 setAimingCoordinates
@@ -130,10 +251,13 @@ sub setAimingCoordinates {
     my ($self) = @_;
     my $coordinates = '03760240';
     $l->info("Setting scanner's aiming coordinates to '$coordinates'");
-    writeCmd($self, "\$FA$coordinates\r");
-    writeCmd($self, "\$Fa\r");                #Request the coordinates from the reader
-    my $savedCoordinates = readMsg($self, 8); #Receive bytes
-    $l->info("  Saved '$savedCoordinates'");
+    sendCmd($self, "\$FA$coordinates\r");
+    my $savedCoordinates = sendCmd($self, "\$Fa\r", 11);                #Request the coordinates from the reader
+    $l->info("  Coordinates '$savedCoordinates'");
+
+    unless ($savedCoordinates =~ /$coordinates$/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault($coordinates, $savedCoordinates);
+    }
 }
 
 =head2 aimingAutoCalibration
@@ -149,10 +273,13 @@ Calibration).
 sub aimingAutoCalibration {
     my ($self) = @_;
     $l->info("Auto calibrating scanner");
-    writeCmd($self, "\$Fx\r");
-    writeCmd($self, "\$Fa\r");             #Request the coordinates from the reader
-    my $coordinates = readMsg($self, 8);   #Receive bytes
+    sendCmd($self, "\$Fx\r");
+    my $coordinates = sendCmd($self, "\$Fa\r", 11);             #Request the coordinates from the reader
     $l->info("  Coordinates '$coordinates'");
+
+    unless ($coordinates) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('coordinates', 'undef');
+    }
 }
 
 =head2 setAutomaticOperatingMode
@@ -172,16 +299,13 @@ configuration of the Transmission Mode parameter.
 sub setAutomaticOperatingMode {
     my ($self) = @_;
     $l->info("Setting 'automatic' operating mode");
-    writeCmd($self, "\$CSNRM02\r");
-}
+    sendCmd($self, "\$CSNRM02\r");
+    my $response = sendCmd($self, "\$cSNRM\r", 5);   ##Check if changes were applied to RAM
+    $l->info("  Automatic Operating Mode '$response'");
 
-sub writeCmd {
-    my ($self, $cmd) = @_;
-    eval {
-        isDataWritten($self->{scanner}->write($cmd), $cmd);
-    };
-    $l->logdie("writeCmd($cmd):> $@") if $@;
-    sleep 1;
+    unless ($response =~ /02/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('02', $response);
+    }
 }
 
 =head2 setAllowedSymbologies
@@ -195,10 +319,10 @@ Disables all symbologies and allows Code39 without checknum
 sub setAllowedSymbologies {
     my ($self) = @_;
     $l->info("Setting allowed symbologies");
-    writeCmd($self, "\$AD\r");     #Disable all symbologies
-    writeCmd($self, "\$CC3EN01\r"); #Allow Code 39
-    writeCmd($self, "\$CC3CC00\r"); #Check Calculation disabled
-    writeCmd($self, "\$CC3MR02\r"); #Must read successfully consecutively two times
+    sendCmd($self, "\$AD\r");     #Disable all symbologies
+    sendCmd($self, "\$CC3EN01\r"); #Allow Code 39
+    sendCmd($self, "\$CC3CC00\r"); #Check Calculation disabled
+    sendCmd($self, "\$CC3MR02\r"); #Must read successfully consecutively two times
 }
 
 =head2 setBeepOnASCII_BEL
@@ -210,25 +334,138 @@ When sending ASCII BEL 0x07 to the barcode reader, it beeps :)
 sub setBeepOnASCII_BEL {
     my ($self) = @_;
     $l->info("Allowing beep on ASCII BEL");
-    writeCmd($self, "\$CR2BB01\r");
+    sendCmd($self, "\$CR2BB01\r");
+    my $response = sendCmd($self, "\$cR2BB\r", 5);   ##Check if changes were applied to RAM
+    $l->info("  Allowing beep on ASCII BEL '$response'");
+
+    unless ($response =~ /01/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('01', $response);
+    }
 }
+
+=head2 _isDataWritten
+
+@THROWS Exception if write 'failed' or was 'incomplete'
+
+=cut
+
+sub _isDataWritten {
+    my ($bytesWritten, $sentData) = @_;
+    SSAuthenticator::Exception::BarcodeReader::WriteFailed->throw(error => "Writing '"._normalizeScannerResponse($sentData)."' failed as \$bytesWritten is undefined")
+            unless(defined($bytesWritten));
+    SSAuthenticator::Exception::BarcodeReader::WriteIncomplete->throw(error => "Writing '"._normalizeScannerResponse($sentData)."' failed as delivery is incomplete. '$bytesWritten' bytes written out of '".length($sentData)."'")
+            unless($bytesWritten == length($sentData));
+}
+
+=head2 _isDataRead
+
+@THROWS Excpetion if read 'failed' or if a specific amount of bytes was requested and not received
+
+=cut
+
+sub _isDataRead {
+    my ($stringIn, $bytesRead, $bytesRequested) = @_;
+    SSAuthenticator::Exception::BarcodeReader::WriteFailed->throw(error =>
+            "Reading data failed as \$bytesRead is undefined.".(defined($stringIn) ? " Managed to receive '$stringIn'" : ''))
+            unless(defined($bytesRead));
+    SSAuthenticator::Exception::BarcodeReader::WriteIncomplete->throw(error =>
+            "Reading data failed as receival was incomplete. '$bytesRead' bytes received out of '".length($bytesRequested)."'.".(defined($stringIn) ? " Managed to receive '$stringIn'" : ''))
+            if ($bytesRequested && ($bytesRead != $bytesRequested))
+}
+
+=head2 _isResponseOk
+
+Gryphon 4400 manual page 292
+
+Checks after sending a command, if the returning message is a GFS4400
+  success        ($>)
+  or a failure   ($@)
+
+@RETURNS String, where the response status and ending carriage returns have been trimmed away. Leaving only the payload behind.
+
+@THROWS SSAuthenticator::Exception::BarcodeReader::Configuration::Acknowledgement
+
+=cut
+
+sub _isResponseOk {
+    my ($response) = @_;
+    if ($response =~ /^\$>/) {
+        $l->debug("Response '"._normalizeScannerResponse($response)."' ok");
+    }
+    elsif ($response =~ /^\$\@/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::Acknowledgement->throw(error => "Response '"._normalizeScannerResponse($response)."' marks a failure");
+    }
+    $response =~ s/\r$//;
+    $response =~ s/^\$>//;
+    return $response;
+}
+
+=head2 sendCmd
+
+Sends a command to the barcode reader
+
+@Throws SSAuthenticator::Exceptions
+
+=cut
+
+sub sendCmd {
+    my ($self, $cmd, $expectedResponseSize) = @_;
+    $expectedResponseSize = 3 unless $expectedResponseSize; #Default response is $>\r
+    _isDataWritten( $self->s->write($cmd), $cmd );
+    return _isResponseOk(readMsg($self, $expectedResponseSize));
+}
+
+=head2 readRow
+
+Reads as much as it can
+
+=cut
+
+sub readRow {
+    my ($self) = @_;
+    my ($byteCount_in, $stringIn) = $self->s->read(255);
+    _isDataRead($stringIn, $byteCount_in);
+    return $stringIn;
+}
+
+=head2 readMsg
+
+Reads only a predetermined amount of bytes.
+Dies if unexpected amount of bytes is returned
+
+=cut
 
 sub readMsg {
     my ($self, $bytes) = @_;
-    my ($byteCount_in, $string_in) = $self->{scanner}->read($bytes);
-    eval {
-        isDataRead($byteCount_in, $bytes);
-    };
-    $l->logdie("readMsg($bytes):> $@") if $@;
-    return $string_in;
+    my ($byteCount_in, $stringIn) = $self->s->read($bytes);
+    _isDataRead($stringIn, $byteCount_in, $bytes);
+    return $stringIn;
 }
 
-sub main {
-    my $configurer = AutoConfigurer->new;
-    $configurer->configure();
-    $l->info("Device configured succesfully!");
+=head2 _normalizeScannerResponse
+
+Makes the scanner's response printable by escaping
+carriage return
+
+=cut
+
+sub _normalizeScannerResponse {
+    my ($response) = @_;
+    $response =~ s/\r/\\r/g;
+    return $response;
 }
 
-__PACKAGE__->main() unless caller;
+=head2 execStep
+
+A wrapper to log and execute subroutines in this PACKAGE from a calling script.
+
+=cut
+
+sub execStep {
+    my ($self, $step) = @_;
+    $self->{_stepCount} = 1 unless(exists($self->{_stepCount}));
+    $l->info("Executing step ".$self->{_stepCount}." -> $step");
+    $self->$step();
+}
 
 1;
