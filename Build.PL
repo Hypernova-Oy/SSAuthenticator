@@ -12,6 +12,7 @@ my $build = Module::Build->new(
     requires => {
         'Bot::BasicBot' => undef,
         'Config::Simple' => undef,
+        'Data::Alias' => undef,
         'DateTime' => undef,
         'DateTime::Format::HTTP' => undef,
         'DBM::Deep' => undef,

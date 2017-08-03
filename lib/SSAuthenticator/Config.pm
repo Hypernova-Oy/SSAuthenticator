@@ -85,7 +85,8 @@ sub _isConfigValid {
                   'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin',
                   'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
-                  'ConnectionTimeout');
+                  'ConnectionTimeout',
+                  'DoubleReadTimeout', 'Code39DecodingLevel');
     foreach my $param (@params) {
         if (not(defined($c->param($param)))) {
             warn "$param not defined in daemon.conf";

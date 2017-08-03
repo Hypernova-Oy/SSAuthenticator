@@ -59,6 +59,9 @@ ircname Toveri Testibottinen Epsilon
 ircignore_list ,
 ircaddress kivilahtio
 
+DoubleReadTimeout 200
+Code39DecodingLevel 5
+
 CONF
 }
 

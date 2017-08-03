@@ -12,6 +12,7 @@ use Device::SerialPort qw( :PARAM :STAT 0.07 );
 use Try::Tiny;
 use Scalar::Util qw(blessed weaken);
 
+use SSAuthenticator::Config;
 
 use SSAuthenticator::Exception::BarcodeReader::WriteFailed;
 use SSAuthenticator::Exception::BarcodeReader::WriteIncomplete;
@@ -208,7 +209,12 @@ sub configureSettings {
 #    $self->aimingAutoCalibration();
     $self->setAutomaticOperatingMode();
     $self->setAllowedSymbologies();
-    $self->setBeepOnASCII_BEL(1);
+    $self->setBeepOnASCII_BEL();
+    $self->setCentralCodeOnly();
+    $self->setMobilePhoneMode();
+    $self->setDoubleReadTimeout();
+    $self->setCode39QuietZones();
+    $self->setCode39DecodingLevel();
 }
 
 =head2 setGlobalSuffixToLF
@@ -343,6 +349,137 @@ sub setBeepOnASCII_BEL {
     }
 }
 
+=head2 setCentralCodeOnly
+
+GFS 4400 manual page 84
+
+Specifies the ability of the reader to decode labels only when they are close to the center of
+the aiming pattern. This allows the reader to accurately target labels when they are placed
+close together, such as on a pick sheet.
+
+=cut
+
+
+sub setCentralCodeOnly {
+    my ($self) = @_;
+    $l->info("Setting Central Code Only");
+
+#    sendCmd($self, "\$CR2BB01\r");
+#    my $response = sendCmd($self, "\$cR2BB\r", 5);   ##Check if changes were applied to RAM
+#    $l->info("  Allowing beep on ASCII BEL '$response'");
+    $l->info("  This feature cannot be configured from the software yet");
+
+#    unless ($response =~ /01/) {
+#        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('01', $response);
+#    }
+}
+
+=head2 setMobilePhoneMode
+
+GFS 4400 manual page 88
+
+=cut
+
+sub setMobilePhoneMode {
+    my ($self) = @_;
+    $l->info("Setting Mobile Phone Mode off");
+
+#    sendCmd($self, "\$CR2BB01\r");
+#    my $response = sendCmd($self, "\$cR2BB\r", 5);   ##Check if changes were applied to RAM
+#    $l->info("  Allowing beep on ASCII BEL '$response'");
+    $l->info("  This feature cannot be configured from the software yet");
+
+#    unless ($response =~ /01/) {
+#        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('01', $response);
+#    }
+}
+
+=head2 setDoubleReadTimeout
+
+GFS 4400 manual page 268
+
+Double Read Timeout prevents a double read of the same label by setting the minimum time
+allowed between reads of labels of the same symbology and data. If the unit reads a label
+and sees the same label again within the specified timeout, the second read is ignored.
+Double Read Timeout does not apply to scan modes that require a trigger pull for each label
+read.
+
+=cut
+
+sub setDoubleReadTimeout {
+    my ($self) = @_;
+    my $c = SSAuthenticator::Config::getConfig();
+    my $hx = sprintf("%2x", int($c->param('DoubleReadTimeout') / 10)); #Hex value is how many 10ms chunks there are, starting from 20ms
+    $l->info("Setting Double Read Timeout to '".$c->param('DoubleReadTimeout')."ms' or HEX '$hx'");
+
+    sendCmd($self, "\$CSNDR$hx\r");
+    my $response = sendCmd($self, "\$cSNDR\r", 5);   ##Check if changes were applied to RAM
+    $l->info("  Double Read Timeout response '$response'");
+
+    unless ($response =~ /$hx/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault($hx, $response);
+    }
+}
+
+=head2 setCode39QuietZones
+
+GFS 4400 manual page 268
+
+Double Read Timeout prevents a double read of the same label by setting the minimum time
+allowed between reads of labels of the same symbology and data. If the unit reads a label
+and sees the same label again within the specified timeout, the second read is ignored.
+Double Read Timeout does not apply to scan modes that require a trigger pull for each label
+read.
+
+=cut
+
+sub setCode39QuietZones {
+    my ($self) = @_;
+    $l->info("Setting Code39 Quiet Zones to both sides");
+
+    sendCmd($self, "\$CC3LO02\r");
+    my $response = sendCmd($self, "\$cC3LO\r", 5);   ##Check if changes were applied to RAM
+    $l->info("  Code39 Quiet Zones response '$response'");
+
+    unless ($response =~ /02/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('02', $response);
+    }
+}
+
+=head2 setCode39DecodingLevel
+
+https://www.manualslib.com/manual/702353/Datalogic-Quickscan-I.html?page=201
+
+Code 128 Decoding Level
+
+Decoding Levels are used to configure a barcode symbology decoder to be very aggressive
+to very conservative depending on a particular customer's needs.
+
+There are many factors that determine when to change the decoding level for a particular
+symbology. These factors include spots, voids, non-uniform bar/space widths, damaged
+labels, etc. that may be experienced in some barcode labels. If there are many hard to read
+or damaged labels that cannot be decoded using a conservative setting, increase the de-
+coding level to be more aggressive. If the majority of labels are very good quality labels,
+or there is a need to decrease the possibility of a decoder error, lower the decoding level
+to a more conservative level.
+
+=cut
+
+sub setCode39DecodingLevel {
+    my ($self) = @_;
+    my $c = SSAuthenticator::Config::getConfig();
+    my $hx = sprintf("0%1d", int($c->param('Code39DecodingLevel'))); #Take only the first digit and append zero to it to make the valid HEX code
+    $l->info("Setting Code39 Decoding Level to '".$c->param('Code39DecodingLevel')."' or as HEX '$hx'");
+
+    sendCmd($self, "\$CC3DL$hx\r"); #01 is strictest, 05 is laxest
+    my $response = sendCmd($self, "\$cC3DL\r", 3);   ##Check if changes were applied to RAM
+    $l->info("  Code39 Decoding Level response '$response'");
+
+    unless ($response =~ /\$\%/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault($hx, $response);
+    }
+}
+
 =head2 _isDataWritten
 
 @THROWS Exception if write 'failed' or was 'incomplete'
@@ -369,7 +506,7 @@ sub _isDataRead {
             "Reading data failed as \$bytesRead is undefined.".(defined($stringIn) ? " Managed to receive '$stringIn'" : ''))
             unless(defined($bytesRead));
     SSAuthenticator::Exception::BarcodeReader::WriteIncomplete->throw(error =>
-            "Reading data failed as receival was incomplete. '$bytesRead' bytes received out of '".length($bytesRequested)."'.".(defined($stringIn) ? " Managed to receive '$stringIn'" : ''))
+            "Reading data failed as receival was incomplete. '$bytesRead' bytes received out of '".$bytesRequested."'.".(defined($stringIn) ? " Managed to receive '$stringIn'" : ''))
             if ($bytesRequested && ($bytesRead != $bytesRequested))
 }
 
