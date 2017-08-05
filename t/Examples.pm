@@ -34,15 +34,16 @@ sub _getDefaultConf {
     setLog4perlConfig();
     my $log4perl = $tempLog4perlFile->filename();
 
+#Pins in BCM numbering
     return <<CONF;
 ApiBaseUrl http://localhost-api/api/v1
 LibraryName MyTestLibrary
 ApiKey testAPikey
 ApiUserName testUser
-GreenLEDPin 22
-BlueLEDPin 27
-RedLEDPin 17
-DoorPin 25
+GreenLEDPin 11
+BlueLEDPin 9
+RedLEDPin 10
+DoorPin 26
 RTTTL-PlayerPin 1
 Verbose 0
 ConnectionTimeout 5
