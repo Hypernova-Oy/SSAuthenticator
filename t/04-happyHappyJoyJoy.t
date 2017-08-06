@@ -40,5 +40,18 @@ sub OLEDMsg {
        "Test greeting injected");
 }
 
+subtest "Barcode read message", \&BarcodeReadMsg;
+sub BarcodeReadMsg {
+    my $bc = '167A1515616';
+    my $centered = SSAuthenticator::centerRow($bc);
+    is($centered, "    $bc     ", "centering works as expected");
+
+    my $rows = SSAuthenticator::getBarcodeReadMsg($bc);
+    is($rows->[0], "    Barcode read    ");
+    is($rows->[1], "    Please wait     ");
+    is($rows->[2], "                    ");
+    is($rows->[3], "    $bc     ");
+}
+
 t::Examples::rmConfig();
 done_testing;

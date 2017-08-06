@@ -63,6 +63,8 @@ ircaddress kivilahtio
 DoubleReadTimeout 200
 Code39DecodingLevel 5
 
+OLED_ShowCardNumberWhenRead 1
+
 CONF
 }
 

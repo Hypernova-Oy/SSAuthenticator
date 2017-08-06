@@ -86,6 +86,7 @@ sub _isConfigValid {
                   'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
                   'ConnectionTimeout',
+                  'OLED_ShowCardNumberWhenRead',
                   'DoubleReadTimeout', 'Code39DecodingLevel');
     foreach my $param (@params) {
         if (not(defined($c->param($param)))) {

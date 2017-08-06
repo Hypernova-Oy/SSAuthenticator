@@ -17,6 +17,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "                    "
+msgstr "                    "
+
 msgid "     Age limit      "
 msgstr "     Ikarajaus      "
 
@@ -26,14 +29,23 @@ msgstr "  Pida hauskaa   :) "
 msgid "     Take care!     "
 msgstr "    Pida huolta!    "
 
+msgid "    Barcode read    "
+msgstr "   Kortti luettu    "
+
+msgid "    Please wait     "
+msgstr "   Odota, ole hyva  "
+
 msgid "   Access denied    "
 msgstr "    Paasy evatty    "
 
 msgid "   Access granted   "
 msgstr "   Paasy sallittu   "
 
-msgid "   I am complete    \\n   Please use me.   "
+msgid ""
+"   I am complete    \\n   Please use me.   \\n                    "
+"\\n                    "
 msgstr "  Olen kokonainen.  \\n  Tule kayttamaan   \\n       minua!       "
+"\\n                    "
 
 msgid "   Library closed   "
 msgstr "Kirjasto on suljettu"
@@ -54,6 +66,7 @@ msgid ""
 "  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n "
 "everything I need. "
 msgstr "Mina vasta herailen.\\n Odotatko hetkisen? \\nItseani tutkiskelen "
+"\\n                    "
 
 msgid "  Unexpected error  "
 msgstr " Odottamaton virhe  "

@@ -42,7 +42,7 @@ use constant {
 use Modern::Perl;
 
 use Scalar::Util qw(blessed);
-use POSIX qw(LC_MESSAGES LC_ALL);
+use POSIX qw(LC_MESSAGES LC_ALL floor ceil);
 use Config::Simple;
 use JSON::XS;
 use Data::Dumper;
@@ -80,11 +80,14 @@ my %messages = (
     'CACHE_USED'      => N__" I Remembered you!  ",
     'CONTACT_LIBRARY' => N__"Contact your library",
     'OPEN_AT'         => N__"Open at",
+    'BARCODE_READ'    => N__"    Barcode read    ",
+    'PLEASE_WAIT'     => N__"    Please wait     ",
+    'BLANK_ROW'       => N__"                    ",
 
     ##INITIALIZATION MESSAGES
     'INITING_STARTING'  => N__"  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n everything I need. ",
     'INITING_ERROR'     => N__" I have failed you  \\n  I am not working  \\nPlease contact your \\n      library       ",
-    'INITING_FINISHED'  => N__"   I am complete    \\n   Please use me.   ",
+    'INITING_FINISHED'  => N__"   I am complete    \\n   Please use me.   \\n                    \\n                    ",
 );
 
 #Certain $authorization-statuses have extra parameters that need to be displayed. Use this package variable
@@ -141,6 +144,16 @@ sub showInitializingMsg {
     return showOLEDMsg(  [split(/\\n/, __($messages{"INITING_$type"}))]  );
 }
 
+sub getBarcodeReadMsg {
+    my ($barcode) = @_;
+    my @rows;
+    $rows[0] = __($messages{'BARCODE_READ'});
+    $rows[1] = __($messages{'PLEASE_WAIT'});
+    $rows[2] = __($messages{'BLANK_ROW'});
+    $rows[3] = centerRow($barcode);
+    return \@rows;
+}
+
 =head2 showOLEDMsg
 
 @PARAM1 ARRAYRef of String, 20-character-long messages.
@@ -185,6 +198,21 @@ sub _getAccessMsg {
     }
 
     return \@msg;
+}
+
+=head3 centerRow
+
+Centers the given row to fit the 20-character wide OLED-display
+
+=cut
+
+sub centerRow {
+    my $le = length($_[0]);
+    return substr($_[0], 0, 20) if $le >= 20;
+    my $padding = (20 - $le) / 2;
+    my $pLeft = floor($padding);
+    my $pRight = ceil($padding);
+    return sprintf("\%${pLeft}s\%s\%${pRight}s", "", $_[0], "");
 }
 
 =HEAD2 isAuthorized
@@ -543,6 +571,8 @@ sub main {
         if ($cardNumber) {
             chomp($cardNumber);
             $l->info("main() Read barcode '$cardNumber'") if $l->is_info;
+            showOLEDMsg(getBarcodeReadMsg($cardNumber)) if config()->param('OLED_ShowCardNumberWhenRead');
+            #sleep 1; #DEBUG: Sleep a bit to make more sense out of the barcode on the OLED-display.
 
             eval {
                 controlAccess($cardNumber);

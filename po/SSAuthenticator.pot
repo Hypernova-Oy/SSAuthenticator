@@ -1,3 +1,6 @@
+msgid "                    "
+msgstr ""
+
 msgid "     Age limit      "
 msgstr ""
 
@@ -7,13 +10,21 @@ msgstr ""
 msgid "     Take care!     "
 msgstr ""
 
+msgid "    Barcode read    "
+msgstr ""
+
+msgid "    Please wait     "
+msgstr ""
+
 msgid "   Access denied    "
 msgstr ""
 
 msgid "   Access granted   "
 msgstr ""
 
-msgid "   I am complete    \\n   Please use me.   "
+msgid ""
+"   I am complete    \\n   Please use me.   \\n                    "
+"\\n                    "
 msgstr ""
 
 msgid "   Library closed   "
