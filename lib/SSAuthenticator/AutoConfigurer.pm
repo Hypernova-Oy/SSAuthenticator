@@ -357,6 +357,9 @@ Specifies the ability of the reader to decode labels only when they are close to
 the aiming pattern. This allows the reader to accurately target labels when they are placed
 close together, such as on a pick sheet.
 
+Got email from Datalogic explaining the codes.
+- Central Code only, page 84  à Pick mode (SNPM)
+
 =cut
 
 
@@ -364,19 +367,21 @@ sub setCentralCodeOnly {
     my ($self) = @_;
     $l->info("Setting Central Code Only");
 
-#    sendCmd($self, "\$CR2BB01\r");
-#    my $response = sendCmd($self, "\$cR2BB\r", 5);   ##Check if changes were applied to RAM
-#    $l->info("  Allowing beep on ASCII BEL '$response'");
-    $l->info("  This feature cannot be configured from the software yet");
+    sendCmd($self, "\$SNPM01\r");
+    my $response = sendCmd($self, "\$cSNPM\r", 5);   ##Check if changes were applied to RAM
+    $l->info("  Reading Central Code Only (aka. Pick Mode) '$response'");
 
-#    unless ($response =~ /01/) {
-#        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('01', $response);
-#    }
+    unless ($response =~ /01/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('01', $response);
+    }
 }
 
 =head2 setMobilePhoneMode
 
 GFS 4400 manual page 88
+
+Got email from Datalogic explaining the codes.
+- Mobile Phone Mode, page 88 à (SNPE)
 
 =cut
 
@@ -384,14 +389,13 @@ sub setMobilePhoneMode {
     my ($self) = @_;
     $l->info("Setting Mobile Phone Mode off");
 
-#    sendCmd($self, "\$CR2BB01\r");
-#    my $response = sendCmd($self, "\$cR2BB\r", 5);   ##Check if changes were applied to RAM
-#    $l->info("  Allowing beep on ASCII BEL '$response'");
-    $l->info("  This feature cannot be configured from the software yet");
+    sendCmd($self, "\$CSNPE00\r");
+    my $response = sendCmd($self, "\$cSNPE\r", 5);   ##Check if changes were applied to RAM
+    $l->info("  Disabling Mobile Phone Mode '$response'");
 
-#    unless ($response =~ /01/) {
-#        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('01', $response);
-#    }
+    unless ($response =~ /00/) {
+        SSAuthenticator::Exception::BarcodeReader::Configuration::ValueNotStored->throwDefault('00', $response);
+    }
 }
 
 =head2 setDoubleReadTimeout
