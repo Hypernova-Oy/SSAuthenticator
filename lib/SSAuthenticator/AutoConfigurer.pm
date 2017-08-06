@@ -111,6 +111,7 @@ Configures the given barcode reader.
 
 sub configure {
     my ($self) = @_;
+    $l->info("GFS4400 version ".$self->readApplicationSoftwareRelease());
     $self->setDeviceToServiceMode();
 
     try {
@@ -201,6 +202,13 @@ sub _restoreNormalConnectionParams {
     $self->s->write_settings();
 }
 
+sub readApplicationSoftwareRelease {
+    my ($self) = @_;
+
+    my $expectedBytes = 72; #The response sise might vary from reader to reader, maybe need to read as much as there is to read?
+    return sendCmd($self, "\$+\$!\r", $expectedBytes);
+}
+
 sub configureSettings {
     my ($self) = @_;
     $l->info("Configuring scanner's settings");
@@ -226,8 +234,8 @@ Adds \n after each barcode read
 sub setGlobalSuffixToLF {
     my ($self) = @_;
     $l->info("Setting Global suffix to \\n");
-    my $suffixHexes = "2B2B0A0000000000000000000000000000000000";
-    #my $suffixHexes = "0A00000000000000000000000000000000000000";
+    #my $suffixHexes = "2B2B0A0000000000000000000000000000000000"; #This suffixes with ++, you shouldn't need to do this. Used to test this configuration option.
+    my $suffixHexes = "0A00000000000000000000000000000000000000"; #This disables suffix
     #Write to RAM
     my $response = sendCmd($self, "\$CLFSU$suffixHexes\r");
     #Check that RAM was actually written
