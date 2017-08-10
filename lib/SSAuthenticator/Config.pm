@@ -153,4 +153,18 @@ sub _isConfigValid {
     return $returnValue;
 }
 
+
+
+
+############################################################
+#### #### ####        Config accessors        #### #### ####
+############################################################
+
+sub getTimeout() {
+    return getConfig()->param('ConnectionTimeout');
+}
+sub getTimeoutInSeconds {
+    return getTimeout() / 1000;
+}
+
 1;

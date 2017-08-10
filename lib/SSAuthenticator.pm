@@ -42,6 +42,7 @@ use constant {
 use Modern::Perl;
 
 use Scalar::Util qw(blessed);
+use Try::Tiny;
 use POSIX qw(LC_MESSAGES LC_ALL floor ceil);
 use Config::Simple;
 use JSON::XS;
@@ -197,6 +198,17 @@ sub _getAccessMsg {
         push(@msg, split(/\\n/, __($happyHappyJoyJoy))) if $happyHappyJoyJoy;
     }
 
+    #"please wait" might be already written on the screen.
+    #Make sure it is overwritten when auth status is known.
+    #So user doesnt see,
+    #  "Auth succeess"
+    #  "Please wait"
+    if (scalar(@msg) < 2) { #If there is only one row to be printed
+        #Append two blank rows
+        push(@msg, '                    ');
+        push(@msg, '                    ');
+    }
+
     return \@msg;
 }
 
@@ -261,18 +273,25 @@ sub canUseLibrary {
     my $cacheUsed;
     my $timedOut;
 
-    if ($ENV{SSA_TEST_MODE}) { #The complexities with eval-blocks, mock-modules, Log4perl and Perl-debugger together make a unique cocktail where things break unexpectedly. Cut complexity from test runs.
-        my $start = time;
-        $authorized = isAuthorizedApi($cardNumber);
-        my $duration = time - $start;
-        $timedOut = ($duration >= getTimeout()) ? 1 : 0;
-    }
-    else {
-        $timedOut = timeout_call(
-            getTimeout(),
-            sub {$authorized = isAuthorizedApi($cardNumber)}
-        );
-    }
+    try {
+
+        if ($ENV{SSA_TEST_MODE}) { #Is this anymore necessary?
+            my $start = time;
+            $authorized = isAuthorizedApi($cardNumber);
+            my $duration = time - $start;
+            $timedOut = ($duration >= SSAuthenticator::Config::getTimeoutInSeconds()) ? 1 : 0;
+        }
+        else {
+            $authorized = isAuthorizedApi($cardNumber);
+        }
+
+    } catch {
+        if (blessed($_) && $_->isa('SSAuthenticator::Exception::HTTPTimeout')) {
+            $timedOut = 1;
+        }
+        elsif (blessed($_)) { $_->rethrow(); }
+        else { die $_; }
+    };
 
     $l->warn("isAuthorizedApi() timed out") if $timedOut;
     $l->info("isAuthorizedApi() returns ".($authorized || '')) if $l->is_info;
@@ -450,20 +469,6 @@ sub denyAccess {
     showAccessMsg($authorization, $cacheUsed);
     playDenyAccessBuzz();
     ledOff('red');
-}
-
-my $defaultTimeout = 3000;
-sub getTimeout() {
-    if (config()->param('ConnectionTimeout')) {
-        return millisecs2secs(config()->param('ConnectionTimeout'));
-    } else {
-        return millisecs2secs($defaultTimeout);
-    }
-}
-
-sub millisecs2secs {
-    my ($milliseconds) = @_;
-    return $milliseconds / 1000;
 }
 
 sub updateCache {

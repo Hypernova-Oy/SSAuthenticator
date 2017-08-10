@@ -18,6 +18,10 @@ use SSLog;
 
 my $l = bless({}, 'SSLog');
 
+
+use SSAuthenticator::Exception::HTTPTimeout;
+
+
 sub _makeSignature {
     my ($method, $userid, $headerXKohaDate, $apiKey) = @_;
 
@@ -47,6 +51,13 @@ sub _prepareAuthenticationHeaders {
 	    'Authorization' => $headerAuthorization};
 }
 
+=head2 getApiResponse
+
+@RETURNS HTTP::Response
+@THROWS SSAuthenticator::Exception::HTTPTimeout if configuration ConnectionTimeout is exceeded
+
+=cut
+
 sub getApiResponse {
     my ($cardNumber) = @_;
 
@@ -54,6 +65,7 @@ sub getApiResponse {
     my $requestUrl = $conf->param('ApiBaseUrl') . "/borrowers/ssstatus";
 
     my $ua = LWP::UserAgent->new;
+    $ua->timeout(  SSAuthenticator::Config::getTimeoutInSeconds()  );
     my $userId = $conf->param("ApiUserName");
     my $apiKey = $conf->param("ApiKey");
     my $authHeaders = _prepareAuthenticationHeaders($userId,
@@ -77,11 +89,65 @@ sub getApiResponse {
 
     my $response = $ua->request($request);
 
-    if ($l->is_debug) {
+    unless ($response) {
+        die "getApiResponse($cardNumber) didn't get a proper Response object?";
+    }
+
+    if (my $clientWarning = $response->header('Client-Warning')) { #Internal LWP::UserAgent error
+        $l->debug("Receiving the response failed with HTTP Client error: "._parseClientErrorToString($response));
+    }
+    elsif ($l->is_debug) {
         $l->debug("Got response: ".$response->as_string());
     }
 
     return $response;
+}
+
+=head2 _parseClientErrorToString
+
+LWP::UserAgent might get timeouted by Sys::SigAction::timeout_call() and this causes a cryptic
+    500 HASH(0x78a078)
+    Content-Type: text/plain
+    Client-Date: Thu, 10 Aug 2017 07:47:07 GMT
+    Client-Warning: Internal response
+
+    HASH(0x78a078)
+
+response, which cannot be parsed properly using HTTP::Response->as_string()
+
+Work around this limitation here, and try to parse the special internal responses to something loggable.
+
+
+Alternatively one can just set the timeout to the LWP::UserAgent :(
+
+
+=cut
+
+sub _parseClientErrorToString {
+    my ($res) = @_;
+
+    my $code = $res->code() || '<Status code undef>' ;
+    my $message = $res->message() || '<Message undef>';
+    if (ref($message)) { #This can bug out and be a HASH
+        $message = $l->flatten($message);
+    }
+    my $headersStr = $res->headers_as_string() || '<Headers undef>';
+    my $content = $res->content() || '<Content undef>';
+    if ($content =~ /^HASH/) { #content is royally mangĺed
+        $content = $res->{_content}; #Dangerously directly access a private variable!
+    }
+    my $as_string = "$code $message\n$headersStr\n$content";
+
+    if ($message eq 'read timeout') {
+        #LWP::UserAgent probably killed by Sys::SigAction::timeout_call()
+        SSAuthenticator::Exception::HTTPTimeout->throw(error => "HTTP Request timed out");
+    }
+    if ($message eq '[{}]') {
+        #LWP::UserAgent probably killed by Sys::SigAction::timeout_call()
+        SSAuthenticator::Exception::HTTPTimeout->throw(error => "HTTP Request probably timeoutted");
+    }
+
+    return $as_string;
 }
 
 1;

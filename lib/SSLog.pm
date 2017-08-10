@@ -8,6 +8,7 @@ use Modern::Perl;
 use Carp qw(longmess);
 use Scalar::Util qw(blessed);
 use Data::Alias;
+use Data::Dumper;
 
 use Log::Log4perl;
 our @ISA = qw(Log::Log4perl);
@@ -55,6 +56,27 @@ sub initLogger {
     }
     my $verbose = $ENV{SSA_LOG_LEVEL} || $config->param('Verbose');
     Log::Log4perl->appender_thresholds_adjust($verbose);
+}
+
+=head2 flatten
+
+    my $string = $logger->flatten(@_);
+
+Given a bunch of $@%, the subroutine flattens those objects to a single human-readable string.
+
+@PARAMS Anything, concatenates parameters to one flat string
+
+=cut
+
+sub flatten {
+    my $self = shift;
+    die __PACKAGE__."->flatten() invoked improperly. Invoke it with \$logger->flatten(\@params)" unless ((blessed($self) && $self->isa(__PACKAGE__)) || ($self eq __PACKAGE__));
+    $Data::Dumper::Indent = 0;
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Quotekeys = 0;
+    $Data::Dumper::Maxdepth = 2;
+    $Data::Dumper::Sortkeys = 1;
+    return Data::Dumper::Dumper(\@_);
 }
 
 1;
