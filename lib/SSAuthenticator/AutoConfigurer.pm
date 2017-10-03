@@ -375,7 +375,7 @@ sub setCentralCodeOnly {
     my ($self) = @_;
     $l->info("Setting Central Code Only");
 
-    sendCmd($self, "\$SNPM01\r");
+    sendCmd($self, "\$CSNPM01\r");
     my $response = sendCmd($self, "\$cSNPM\r", 5);   ##Check if changes were applied to RAM
     $l->info("  Reading Central Code Only (aka. Pick Mode) '$response'");
 
