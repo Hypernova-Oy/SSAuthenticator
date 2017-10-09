@@ -10,6 +10,7 @@ use Modern::Perl;
 
 use HTTP::Response;
 use JSON;
+use Time::HiRes;
 
 =head getApiResponse_mockResponse
 
@@ -67,6 +68,17 @@ sub getApiResponse {
 
     sleep SSAuthenticator::getTimeout() if $garmr->{timeout};
     return $response;
+}
+
+our ($doorOnTime, $doorOffTime);
+sub doorOnTimed {
+    $doorOnTime = Time::HiRes::time();
+    return 1;
+}
+
+sub doorOffTimed {
+    $doorOffTime = Time::HiRes::time();
+    return 1;
 }
 
 1;

@@ -9,8 +9,10 @@ use Modern::Perl;
 
 use Config::Simple;
 use Data::Dumper;
+use Try::Tiny;
 use SSLog;
 
+use SSAuthenticator::Exception::BadConfiguration;
 
 
 my $config;
@@ -85,7 +87,7 @@ sub _isConfigValid {
                   'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin',
                   'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
-                  'ConnectionTimeout',
+                  'ConnectionTimeout', 'DoorOpenDuration',
                   'OLED_ShowCardNumberWhenRead',
                   'DoubleReadTimeout', 'Code39DecodingLevel');
     foreach my $param (@params) {
@@ -121,6 +123,13 @@ sub _isConfigValid {
         warn $reason;
         $returnValue = 0;
     }
+
+    try {
+        setDoorOpenDuration($c->param("DoorOpenDuration"));
+    } catch {
+        warn $_;
+        $returnValue = 0;
+    };
 
     ##MailboxDir
     my $mailboxDir = $c->param('MailboxDir');
@@ -165,6 +174,25 @@ sub getTimeout() {
 }
 sub getTimeoutInSeconds {
     return getTimeout() / 1000;
+}
+sub setDoorOpenDuration {
+    my ($doorOpenDuration) = @_;
+    if (not($doorOpenDuration) || not($doorOpenDuration =~ /\d+/)) {
+        my $reason = "DoorOpenDuration '$doorOpenDuration' is invalid. " .
+            "Valid value is an integer.";
+        SSAuthenticator::Exception::BadConfiguration->throw(error => $reason);
+    } elsif ($doorOpenDuration > 120000) {
+        my $reason = "DoorOpenDuration '$doorOpenDuration' is too big. Max 120000 ms";
+        SSAuthenticator::Exception::BadConfiguration->throw(error => $reason);
+    } elsif ($doorOpenDuration < 500) {
+        my $reason = "DoorOpenDuration '$doorOpenDuration' is too small. Min 500 ms";
+        SSAuthenticator::Exception::BadConfiguration->throw(error => $reason);
+    }
+    getConfig()->param('DoorOpenDuration', $doorOpenDuration);
+    return getConfig()->param('DoorOpenDuration');
+}
+sub getDoorOpenDuration {
+    return getConfig()->param('DoorOpenDuration');
 }
 
 1;

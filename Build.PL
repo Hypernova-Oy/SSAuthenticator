@@ -27,7 +27,7 @@ my $build = Module::Build->new(
         'Sys::SigAction'     => undef,
         'Test::More'         => undef,
         'Test::MockModule'   => undef,
-        'Try::Catch'         => undef,
+        'Try::Tiny'          => undef,
     },
 );
 

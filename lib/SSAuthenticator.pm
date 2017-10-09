@@ -430,12 +430,19 @@ sub isAuthorizedCache {
 
 sub grantAccess {
     my ($authorization, $cacheUsed) = @_;
+    my $doorOpenDuration = config->param('DoorOpenDuration') / 1000; #Turn ms to seconds
 
     doorOn();
+    my $doorOpenStartTime = Time::HiRes::time();
     ledOn('green');
 
     showAccessMsg($authorization, $cacheUsed);
     playAccessBuzz();
+
+    #Wait for the specified amount of time to keep the door relay closed.
+    #This can be used to keep the doors open longer, or to prolong the opening signal to a building automation system.
+    my $doorOpenTimeLeft = $doorOpenDuration - (Time::HiRes::time() - $doorOpenStartTime);
+    Time::HiRes::sleep($doorOpenTimeLeft);
 
     ledOff('green');
     doorOff();

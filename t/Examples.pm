@@ -50,6 +50,7 @@ ConnectionTimeout 5
 RandomGreetingChance 50
 MailboxDir $dir
 DefaultLanguage en_US
+DoorOpenDuration 1000
 Log4perlConfig $log4perl
 
 ircserver irc.oftc.net
