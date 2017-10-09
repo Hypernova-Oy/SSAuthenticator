@@ -430,7 +430,7 @@ sub isAuthorizedCache {
 
 sub grantAccess {
     my ($authorization, $cacheUsed) = @_;
-    my $doorOpenDuration = config->param('DoorOpenDuration') / 1000; #Turn ms to seconds
+    my $doorOpenDuration = SSAuthenticator::Config::getDoorOpenDuration() / 1000; #Turn ms to seconds
 
     doorOn();
     my $doorOpenStartTime = Time::HiRes::time();
