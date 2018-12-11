@@ -73,13 +73,11 @@ sub sendMessage {
     #Die or succeed
     $self->_canDispatch($command);
 
-    File::Slurp::write_file(
-        $config->param('MailboxDir').'/'.$command,
-        {
-            binmode => ':utf8',
-        },
-        join(' ', @params),
-    );
+    my $mailboxFile = $config->param('MailboxDir').'/'.$command;
+    open(my $FH, '>:encoding(UTF-8)', $mailboxFile)
+        or die("Failed to write a mailbox message to mailbox '$mailboxFile': $!");
+    print $FH join(' ', @params);
+    close($FH);
     return 1;
 }
 

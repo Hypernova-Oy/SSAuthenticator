@@ -20,6 +20,7 @@ sub AUTOLOAD {
     my $l = shift;
     my $method = our $AUTOLOAD;
     $method =~ s/.*://;
+    return if $method eq 'DESTROY';
     unless (blessed($l)) {
          longmess "SSLog invoked with an unblessed reference??";
     }
