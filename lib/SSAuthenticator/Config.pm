@@ -84,7 +84,7 @@ sub _isConfigValid {
 
     ##All mandatory params
     my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey',
-                  'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin',
+                  'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'DoorOffPin',
                   'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
                   'ConnectionTimeout', 'DoorOpenDuration',

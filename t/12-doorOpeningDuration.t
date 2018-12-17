@@ -18,9 +18,9 @@ SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 #Test that the relay actually is closed for the given duration.
 subtest "Door control relay closed duration", \&doorClosedDuration;
 sub doorClosedDuration {
-    my $ssAuthenticatorMockModule = Test::MockModule->new('SSAuthenticator');
-    $ssAuthenticatorMockModule->mock('doorOn', \&t::Mocks::doorOnTimed);
-    $ssAuthenticatorMockModule->mock('doorOff', \&t::Mocks::doorOffTimed);
+    my $ssAuthenticatorMockModule = Test::MockModule->new('SSAuthenticator::Lock');
+    $ssAuthenticatorMockModule->mock('on', \&t::Mocks::doorOnTimed);
+    $ssAuthenticatorMockModule->mock('off', \&t::Mocks::doorOffTimed);
 
     my $doorOpenDuration = SSAuthenticator::Config::setDoorOpenDuration(5000);
     is($doorOpenDuration, 5000, "Configuration 'DoorOpenDuration' properly set");

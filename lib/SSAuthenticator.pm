@@ -6,7 +6,7 @@
 
 package SSAuthenticator;
 
-our $VERSION = "0.12";
+our $VERSION = "0.13";
 
 #Self-service authorization statuses
 #Statuses > 0 are success statuses
@@ -59,6 +59,7 @@ use SSAuthenticator::Config;
 use SSAuthenticator::AutoConfigurer;
 use SSAuthenticator::DB;
 use SSAuthenticator::Greetings;
+use SSAuthenticator::Lock;
 use SSAuthenticator::Mailbox;
 use SSLog;
 
@@ -95,11 +96,13 @@ my %messages = (
 #as a hack to deliver parameters through the authorization-stack without needing to refactor everything.
 my %packageHack;
 
+my SSAuthenticator::Lock $lockControl;
+my $leds = {};
+
 sub db {
     return SSAuthenticator::DB::getDB();
 }
 
-my $leds = {};
 sub initLeds {
     $leds->{red}   = GPIO->new(config()->param('RedLEDPin'));
     $leds->{green} = GPIO->new(config()->param('GreenLEDPin'));
@@ -118,19 +121,9 @@ sub ledOff {
     return 1;
 }
 
-my $doorRelay;
-sub initDoor {
-    $doorRelay = GPIO->new(config()->param('DoorPin'));
-}
-sub doorOn {
-    initDoor() unless $doorRelay;
-    $doorRelay->turnOn();
-    return 1;
-}
-sub doorOff {
-    initDoor() unless $doorRelay;
-    $doorRelay->turnOff();
-    return 1;
+sub lockControl {
+    $lockControl = SSAuthenticator::Lock->new() unless $lockControl;
+    return $lockControl;
 }
 
 sub showAccessMsg {
@@ -432,7 +425,7 @@ sub grantAccess {
     my ($authorization, $cacheUsed) = @_;
     my $doorOpenDuration = SSAuthenticator::Config::getDoorOpenDuration() / 1000; #Turn ms to seconds
 
-    doorOn();
+    lockControl()->on();
     my $doorOpenStartTime = Time::HiRes::time();
     ledOn('green');
 
@@ -445,7 +438,7 @@ sub grantAccess {
     Time::HiRes::sleep($doorOpenTimeLeft);
 
     ledOff('green');
-    doorOff();
+    lockControl()->off();
 }
 
 sub playAccessBuzz {

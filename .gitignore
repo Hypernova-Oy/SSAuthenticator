@@ -6,3 +6,5 @@ blib/
 *.komodoproject
 *.patch
 LocaleData
+.idea
+SSAuthenticator.iml
