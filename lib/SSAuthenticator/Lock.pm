@@ -23,7 +23,6 @@ use Modern::Perl;
 
 use Scalar::Util qw(blessed);
 use Try::Tiny;
-use Data::Printer;
 use Time::HiRes;
 
 use GPIO::Relay;
@@ -43,9 +42,11 @@ sub new {
 
     my $self = bless({}, $class);
     if (defined($onPin) && defined($offPin)) { # Dual-latch relay requested
+        $l->info("Configured to use a double-latch relay");
         $self->{relay} = GPIO::Relay::DoubleLatch->new($onPin, $offPin);
     }
     else { # Single-latch relay requested
+        $l->info("Configured to use a single-latch relay");
         $self->{relay} = GPIO::Relay::SingleLatch->new($onPin);
     }
 

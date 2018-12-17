@@ -447,19 +447,64 @@ sub playAccessBuzz {
 sub playDenyAccessBuzz {
     playRTTTL('toveri_access_denied');
 }
+
+=head2 playRTTTL
+
+Plays the given song.
+The player is forked to the background using fork().
+If the player takes longer than 10min to play the song, eg. the player hangs,
+the player is made to exit cleanly.
+
+ @param1 {String} Name of the song in the rtttl-player library to play
+
+=cut
+
 sub playRTTTL {
-    my ($song) = @_;
-    system('rtttl-player','-p',config()->param('RTTTL-PlayerPin'),'-o',"song-$song");
-    if ($? == -1) {
-        $l->warn("failed to execute: $!\n") if $l->is_warn;
-    }
-    elsif ($? & 127) {
-        $l->warn(sprintf "rtttl-player died with signal %d, %s coredump\n",
-        ($? & 127),  ($? & 128) ? 'with' : 'without') if $l->is_warn;
+    my ($song, $timeout) = @_;
+    $timeout = 600 unless(defined($timeout));
+    if (my $pid = fork()) {
+        # Parent continues to this path, not blocked by the music player.
+        return 1;
     }
     else {
-        $l->warn(sprintf "rtttl-player exited with value %d\n", $? >> 8) if $l->is_warn;
-    };
+        # Forked process now proceeds to play the song.
+        # When the song has been played, the forked process exits cleanly.
+        # Let's assume the song is never longer than 10 minutes.
+        #
+        # After this position, the Log4perl might no longer be available, or other services, if the parent Perl-process
+        # has already exited. Use only basic Perl here.
+        #
+        # If the player dies, it is caught upstream and causes very strange problems with two parallel processes in the
+        # SSAuthenticator::main()-loop
+        #
+        eval {
+            my @cmd = ('rtttl-player', '-p', config()->param('RTTTL-PlayerPin'), '-o', "song-$song");
+            if (timeout_call(
+                $timeout,
+                sub {
+                    system(@cmd);
+                    if ($? == -1) {
+                        warn "failed to execute 'rtttl-player': $!\n";
+                    }
+                    elsif ($? & 127) {
+                        warn sprintf "rtttl-player died with signal %d, %s coredump\n",
+                                     ($? & 127), ($? & 128) ? 'with' : 'without';
+                    }
+                    else {
+                        my $rv = $? >> 8;
+                        warn sprintf "rtttl-player exited with value %d\n", $rv if $rv != 0;
+                    };
+                }
+            )) {
+                warn "Command '@cmd' timed out!";
+            }
+        };
+        if ($@) {
+            warn $@;
+            exit(666);
+        }
+        exit(0);
+    }
 }
 
 sub denyAccess {
