@@ -436,9 +436,11 @@ sub grantAccess {
     #This can be used to keep the doors open longer, or to prolong the opening signal to a building automation system.
     my $doorOpenTimeLeft = $doorOpenDuration - (Time::HiRes::time() - $doorOpenStartTime);
     Time::HiRes::sleep($doorOpenTimeLeft);
-
-    ledOff('green');
     lockControl()->off();
+
+    my $signalingTimeLeft = 1 - Time::HiRes::time() - $doorOpenStartTime; # Make the LED display for atleast one second.
+    Time::HiRes::sleep($signalingTimeLeft) if ($signalingTimeLeft > 0);
+    ledOff('green');
 }
 
 sub playAccessBuzz {
@@ -513,6 +515,10 @@ sub denyAccess {
     ledOn('red');
     showAccessMsg($authorization, $cacheUsed);
     playDenyAccessBuzz();
+
+    # Make the LED display for atleast one second.
+    Time::HiRes::sleep(1);
+
     ledOff('red');
 }
 
