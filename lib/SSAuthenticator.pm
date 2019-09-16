@@ -23,6 +23,7 @@ use constant {
     ERR_BADCARD       => -7, #if user's cardnumber is not know
     ERR_NOTCACHED     => -8, #
     ERR_ERR           => -100, #Server error
+    ERR_API_AUTH      => -101, #API auth error
 };
 
 
@@ -70,6 +71,7 @@ my %messages = (
     ##ACCESS MESSAGES
     OK                 , N__"   Access granted   ", # '=>' quotes the key automatically, use ',' to not quote the constants to strings
     'ACCESS_DENIED'   => N__"   Access denied    ",
+    ERR_API_AUTH       , N__" Device API failure \\n Bad authentication ",
     ERR_UNDERAGE       , N__"     Age limit      ",
     ERR_SSTAC          , N__" Terms & Conditions \\n    not accepted    ",
     ERR_BBC            , N__"   Wrong borrower   \\n      category      ",
@@ -332,7 +334,10 @@ sub isAuthorizedApi {
         $l->error("getApiResponse() returns '".($httpResponse || '')."' instead of a HTTP:Response-object!!") if $l->is_error;
     }
 
-    if ($status eq 404) {
+    if ($status eq 401 || $status eq 403) {
+        return ERR_API_AUTH;
+    }
+    elsif ($status eq 404) {
         return ERR_BADCARD;
     }
     elsif ($status eq 200 && $err) {
