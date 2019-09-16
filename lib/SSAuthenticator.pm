@@ -560,9 +560,57 @@ sub getBarcodeSeparator {
 }
 
 sub configureBarcodeScanner {
-    my $configurer = SSAuthenticator::AutoConfigurer->new;
-    $configurer->configure();
-    $l->info("Barcode scanner configured") if $l->is_info;
+    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
+    if    ($brm =~ /^GFS4400$/) {
+        my $configurer = SSAuthenticator::AutoConfigurer->new;
+        $configurer->configure();
+    }
+    elsif ($brm =~ /^WGC300UsbAT$/) {
+        GetReader()->autoConfigure();
+    }
+    $l->info("Barcode scanner '$brm' configured") if $l->is_info;
+}
+
+sub GetReader {
+    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
+    if    ($brm =~ /^GFS4400$/) {
+        ##Sometimes the barcode scanner can disappear and reappear during/after configuration. Try to find a barcode scanner handle
+        for (my $tries=0 ; $tries < 10 ; $tries++) {
+            open(my $device, "<", "/dev/barcodescanner");
+            return $device if $device;
+            sleep 1;
+        }
+    }
+    elsif ($brm =~ /^WGC300UsbAT$/) {
+        require SSAuthenticator::Device::WGC300UsbAT;
+        return SSAuthenticator::Device::WGC300UsbAT->new();
+    }
+}
+
+sub ReadBarcode {
+    my ($device, $timeout) = @_;
+    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
+    if    ($brm =~ /^GFS4400$/) {
+        timeout_call(
+            $timeout,
+            sub {return <$device>}
+        );
+    }
+    elsif ($brm =~ /^WGC300UsbAT$/) {
+        return $device->pollData($timeout);
+    }
+}
+
+# Flush buffers from possible repeated reads
+sub FlushBarcodeBuffers {
+    my ($device) = @_;
+    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
+    if    ($brm =~ /^GFS4400$/) {
+        close $device;
+    }
+    elsif ($brm =~ /^WGC300UsbAT$/) {
+        $device->receiveData();
+    }
 }
 
 =head2 changeLanguage
@@ -609,21 +657,11 @@ sub main {
     showInitializingMsg('FINISHED');
     while (1) {
         SSAuthenticator::Mailbox::checkMailbox();
-        my $device;
-        ##Sometimes the barcode scanner can disappear and reappear during/after configuration. Try to find a barcode scanner handle
-        for (my $tries=0 ; $tries < 10 ; $tries++) {
-            open($device, "<", "/dev/barcodescanner");
-            last if $device;
-            sleep 1;
-        }
+
+        my $device = GetReader();
         $l->error("main() No barcode reader attached") && exit(1) unless $device;
-        my $cardNumber = "";
-        if (timeout_call(
-            30,
-            sub {$cardNumber = <$device>})
-        ) {
-            next;
-        }
+
+        my $cardNumber = ReadBarcode($device, 30);
         if ($cardNumber) {
             chomp($cardNumber);
             $l->info("main() Read barcode '$cardNumber'") if $l->is_info;
@@ -637,7 +675,7 @@ sub main {
                 $l->fatal("controlAccess($cardNumber) $@");
             }
         }
-        close $device; # Clears buffer
+        FlushBarcodeBuffers($device);
     }
 }
 

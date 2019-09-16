@@ -15,6 +15,7 @@ use SSLog;
 use SSAuthenticator::Exception::BadConfiguration;
 
 
+our @supportedBarcodeReaderModels = qw(GFS4400 WGC300UsbAT);
 my $config;
 my $configFile = "/etc/ssauthenticator/daemon.conf";
 my $l = bless({}, 'SSLog');
@@ -88,7 +89,7 @@ sub _isConfigValid {
                   'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
                   'ConnectionTimeout', 'DoorOpenDuration',
-                  'OLED_ShowCardNumberWhenRead',
+                  'OLED_ShowCardNumberWhenRead', 'BarcodeReaderModel',
                   'DoubleReadTimeout', 'Code39DecodingLevel');
     foreach my $param (@params) {
         if (not(defined($c->param($param)))) {
@@ -156,6 +157,13 @@ sub _isConfigValid {
     }
     elsif (! -x $mailboxDir) {
         warn "Directory 'MailboxDir' '$mailboxDir' is not executable by ".($pwuid[0] || $pwuid[1]);
+        $returnValue = 0;
+    }
+
+    ##BarcodeReaderModel
+    my $brm = $c->param('BarcodeReaderModel');
+    unless (grep {$brm eq $_} @supportedBarcodeReaderModels) {
+	warn "BarcodeReaderModel '$brm' is not supported. Supported models: [@supportedBarcodeReaderModels]";
         $returnValue = 0;
     }
 

@@ -16,6 +16,8 @@ Log::Log4perl->wrapper_register(__PACKAGE__);
 
 #use SSAuthenticator::Config;
 
+sub import {}
+
 sub AUTOLOAD {
     my $l = shift;
     my $method = our $AUTOLOAD;
