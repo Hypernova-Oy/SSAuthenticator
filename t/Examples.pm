@@ -53,6 +53,7 @@ MailboxDir $dir
 DefaultLanguage en_US
 DoorOpenDuration 1000
 Log4perlConfig $log4perl
+BarcodeReaderModel WGC300UsbAT
 
 ircserver irc.oftc.net
 ircport 6667
