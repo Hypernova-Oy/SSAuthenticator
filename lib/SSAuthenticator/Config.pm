@@ -84,13 +84,15 @@ sub _isConfigValid {
     my @pwuid = getpwuid($<);
 
     ##All mandatory params
-    my @params = ('ApiBaseUrl', 'LibraryName', 'ApiUserName', 'ApiKey',
+    my @params = ('ApiBaseUrl', 'ApiUserName', 'ApiKey',
                   'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'DoorOffPin',
                   'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
                   'ConnectionTimeout', 'DoorOpenDuration',
                   'OLED_ShowCardNumberWhenRead', 'BarcodeReaderModel',
                   'DoubleReadTimeout', 'Code39DecodingLevel');
+                  # Not mandatory anymore
+                  # 'LibraryName',
     foreach my $param (@params) {
         if (not(defined($c->param($param)))) {
             warn "$param not defined in daemon.conf";

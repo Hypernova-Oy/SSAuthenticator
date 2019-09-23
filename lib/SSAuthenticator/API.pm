@@ -76,12 +76,15 @@ sub getApiResponse {
     my $date = $authHeaders->{'X-Koha-Date'};
     my $authorization = $authHeaders->{'Authorization'};
 
+    my $body = "cardnumber=$cardNumber";
+    $body   .= "&branchcode=".$conf->param('LibraryName') if $conf->param('LibraryName');
+
     my $request = HTTP::Request->new(GET => $requestUrl);
     $request->header('X-Koha-Date' => $date);
     $request->header('Authorization' => $authorization);
     $request->header('Content-Type' => 'application/x-www-form-urlencoded');
-    $request->header('Content-Length' => length('cardnumber='.$cardNumber));
-    $request->content('cardnumber='.$cardNumber);
+    $request->header('Content-Length' => length($body));
+    $request->content($body);
 
     if ($l->is_trace) {
         $l->trace("Sending request: ".$request->as_string());
