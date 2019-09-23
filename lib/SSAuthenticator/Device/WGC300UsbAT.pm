@@ -63,7 +63,7 @@ sub pollData {
 
   while ($timeoutLeft > 0) {
     my ($count, $saw) = $s->receiveData();
-    if ($count > 0) {
+    if ($count && $count > 0) {
       $chars += $count;
       $buffer.= $saw;
 
@@ -79,11 +79,14 @@ sub pollData {
   if ($timeoutLeft == 0) {
     $logger->trace("Timed out in '$timeout' seconds.");
   }
+  return undef;
 }
 
 sub receiveData {
   my ($s) = @_;
   my ($count, $data) = $s->{dev}->read(255);
+  return ($count, $data) unless ($count && $data);
+
   $data =~ s/(:?^\s+)|(:?\s+$)//g;
   chomp $data;
   return ($count, $data);
@@ -108,9 +111,10 @@ sub DESTROY {
 }
 
 # Initialize the singleton
-$reader = new(__PACKAGE__);
-$reader->init("/dev/ttyACM0");
-#$reader->autoConfigure();
-
+unless ($reader) {
+  $reader = new(__PACKAGE__);
+  $reader->init("/dev/ttyACM0");
+  #$reader->autoConfigure();
+}
 
 1;
