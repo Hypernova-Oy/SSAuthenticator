@@ -11,6 +11,7 @@ my $build = Module::Build->new(
     },
     requires => {
         'Bot::BasicBot'      => undef,
+        'Carp::Always'       => undef,
         'Config::Simple'     => undef,
         'Data::Alias'        => undef,
         'DateTime'           => undef,

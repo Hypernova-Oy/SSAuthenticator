@@ -14,7 +14,7 @@ debianPackagedPerlModules=libtest-simple-perl libtest-mockmodule-perl \
                libwww-perl libjson-perl libsys-sigaction-perl libdatetime-perl \
                libdatetime-format-http-perl libdigest-sha-perl libsystemd-dev \
                liblog-log4perl-perl liblocale-gettext-perl libjson-xs-perl \
-               libbot-basicbot-perl
+               libbot-basicbot-perl libcarp-always-perl
 
 
 #Macro to check the exit code of a make expression and possibly not fail on warnings
