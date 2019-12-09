@@ -14,6 +14,7 @@ my $build = Module::Build->new(
         'Carp::Always'       => undef,
         'Config::Simple'     => undef,
         'Data::Alias'        => undef,
+        'Data::Printer'      => undef,
         'DateTime'           => undef,
         'DateTime::Format::HTTP' => undef,
         'DBM::Deep'          => undef,
