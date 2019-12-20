@@ -2,6 +2,8 @@
 # Copyright (C) 2016 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Olli-Antti Kivilahti <olli-antti.kivilahti@jns.fi>, 2016.
+# Halminen Irina <irina.halminen@joensuu.fi>, 2020.
+# Knuutinen Päivi <paivi.knuutinen@joensuu.fi>, 2020.
 #
 msgid ""
 msgstr ""
@@ -44,14 +46,14 @@ msgstr "   Paasy sallittu   "
 msgid ""
 "   I am complete    \\n   Please use me.   \\n                    "
 "\\n                    "
-msgstr "  Olen kokonainen.  \\n  Tule kayttamaan   \\n       minua!       "
+msgstr "    Olen valmis.    \\n  Tule kayttamaan   \\n       minua!       "
 "\\n                    "
 
 msgid "   Library closed   "
 msgstr "Kirjasto on suljettu"
 
 msgid "   Network error    "
-msgstr "Verkkoyhteysongelma "
+msgstr " Verkkoyhteysongelma"
 
 msgid "   See you soon!    "
 msgstr "   Nahdaan pian!    "
@@ -65,29 +67,29 @@ msgstr "  Vaara asiakaslaji "
 msgid ""
 "  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n "
 "everything I need. "
-msgstr "Mina vasta herailen.\\n Odotatko hetkisen? \\nItseani tutkiskelen "
+msgstr "Mina vasta herailen.\\n Odotatko hetkisen? \\n    Tarkistetaan    "
 "\\n                    "
 
 msgid "  Unexpected error  "
 msgstr " Odottamaton virhe  "
 
 msgid " Circulation rules  \\n    not followed    "
-msgstr " Kayttajatilillanne \\non jotain omituista "
+msgstr " Kayttajatilillanne \\n      on esto       "
 
 msgid " Enjoy our library. "
-msgstr "Nauti kirjastostamme"
+msgstr "     Tervetuloa     "
 
 msgid " I Remembered you!  "
 msgstr "   Muistin sinut!   "
 
 msgid " I aim to please ;) "
-msgstr "Tahtaan tyydytykseen"
+msgstr "     Tervetuloa     "
 
 msgid ""
 " I have failed you  \\n  I am not working  \\nPlease contact your \\n      "
 "library       "
 msgstr ""
-"Olen pettanyt sinut.\\n  En voi palvella.  \\n    Ota yhteytta    \\n    "
+"   Toimintahairio   \\n  En voi palvella.  \\n    Ota yhteytta    \\n    "
 "kirjastoosi.    "
 
 msgid " Self-service usage \\n permission revoked "
