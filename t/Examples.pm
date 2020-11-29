@@ -40,11 +40,11 @@ ApiBaseUrl http://localhost-api/api/v1
 LibraryName MyTestLibrary
 ApiKey testAPikey
 ApiUserName testUser
-GreenLEDPin 13
+GreenLEDPin 5
 BlueLEDPin 6
-RedLEDPin 5
-DoorPin 26
-DoorOffPin 19
+RedLEDPin 13
+DoorPin 20
+DoorOffPin 21
 RTTTL-PlayerPin 18
 Verbose 0
 ConnectionTimeout 5
