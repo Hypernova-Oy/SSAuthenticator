@@ -21,9 +21,11 @@ use constant {
     ERR_NAUGHTY       => -5, #if the authorizing user has fines or debarments
     ERR_CLOSED        => -6, #if the library's self-service time is over for the day
     ERR_BADCARD       => -7, #if user's cardnumber is not know
-    ERR_NOTCACHED     => -8, #
-    ERR_ERR           => -100, #Server error
+    ERR_PINTIMEOUT    => -9,   #User took too long to enter the PIN code
+    ERR_PINBAD        => -10,  #User entered a wrong PIN number
+    ERR_SERVER        => -100, #Server error, probably API Broken or misconfigured from the server side
     ERR_API_AUTH      => -101, #API auth error
+    ERR_SERVERCONN    => -102, #Server has connection issues
 };
 
 
@@ -44,182 +46,42 @@ use Modern::Perl;
 
 use Scalar::Util qw(blessed);
 use Try::Tiny;
-use POSIX qw(LC_MESSAGES LC_ALL floor ceil);
-use Config::Simple;
-use JSON::XS;
+use POSIX qw(floor ceil);
 use Data::Dumper;
-use Sys::SigAction qw( timeout_call );
 use Time::HiRes;
-use OLED::Client;
 
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
 use GPIO;
 use SSAuthenticator::API;
+use SSAuthenticator::BarcodeReader;
 use SSAuthenticator::Config;
 use SSAuthenticator::AutoConfigurer;
 use SSAuthenticator::DB;
-use SSAuthenticator::Greetings;
+use SSAuthenticator::Device::KeyPad;
+use SSAuthenticator::Device::RGBLed;
+use SSAuthenticator::I18n qw($i18nMsg);
 use SSAuthenticator::Lock;
 use SSAuthenticator::Mailbox;
+use SSAuthenticator::OLED;
+use SSAuthenticator::Password;
+use SSAuthenticator::RTTTL;
+use SSAuthenticator::SharedState;
+use SSAuthenticator::Transaction;
 use SSLog;
 
 my $l = bless({}, 'SSLog');
 
-my %messages = (
-                            #-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++
-    ##ACCESS MESSAGES
-    OK                 , N__"   Access granted   ", # '=>' quotes the key automatically, use ',' to not quote the constants to strings
-    'ACCESS_DENIED'   => N__"   Access denied    ",
-    ERR_API_AUTH       , N__" Device API failure \\n Bad authentication ",
-    ERR_UNDERAGE       , N__"     Age limit      ",
-    ERR_SSTAC          , N__" Terms & Conditions \\n    not accepted    ",
-    ERR_BBC            , N__"   Wrong borrower   \\n      category      ",
-    ERR_REVOKED        , N__" Self-service usage \\n permission revoked ",
-    ERR_NAUGHTY        , N__" Circulation rules  \\n    not followed    ",
-    ERR_CLOSED         , N__"   Library closed   ",
-    ERR_BADCARD        , N__"Card not recognized ",
-    ERR_NOTCACHED      , N__"   Network error    ",
-    ERR_ERR            , N__"  Unexpected error  ",
-    'CACHE_USED'      => N__" I Remembered you!  ",
-    'CONTACT_LIBRARY' => N__"Contact your library",
-    'OPEN_AT'         => N__"Open at",
-    'BARCODE_READ'    => N__"    Barcode read    ",
-    'PLEASE_WAIT'     => N__"    Please wait     ",
-    'BLANK_ROW'       => N__"                    ",
-
-    ##INITIALIZATION MESSAGES
-    'INITING_STARTING'  => N__"  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n everything I need. ",
-    'INITING_ERROR'     => N__" I have failed you  \\n  I am not working  \\nPlease contact your \\n      library       ",
-    'INITING_FINISHED'  => N__"   I am complete    \\n   Please use me.   \\n                    \\n                    ",
-);
-
-#Certain $authorization-statuses have extra parameters that need to be displayed. Use this package variable
-#as a hack to deliver parameters through the authorization-stack without needing to refactor everything.
-my %packageHack;
-
 my SSAuthenticator::Lock $lockControl;
-my $leds = {};
+our SSAuthenticator::Device::KeyPad $keyPad;
 
 sub db {
     return SSAuthenticator::DB::getDB();
 }
 
-sub initLeds {
-    $leds->{red}   = GPIO->new(config()->param('RedLEDPin'));
-    $leds->{green} = GPIO->new(config()->param('GreenLEDPin'));
-    $leds->{blue}  = GPIO->new(config()->param('BlueLEDPin'));
-}
-sub ledOn {
-    my ($colour) = @_;
-    initLeds() unless $leds->{$colour};
-    $leds->{$colour}->turnOn();
-    return 1;
-}
-sub ledOff {
-    my ($colour) = @_;
-    initLeds() unless $leds->{$colour};
-    $leds->{$colour}->turnOff();
-    return 1;
-}
-
 sub lockControl {
     $lockControl = SSAuthenticator::Lock->new() unless $lockControl;
     return $lockControl;
-}
-
-sub showAccessMsg {
-    my ($authorization, $cacheUsed) = @_;
-    return 0 unless(defined($authorization));
-
-    return showOLEDMsg(  _getAccessMsg($authorization, $cacheUsed)  );
-}
-
-sub showInitializingMsg {
-    my ($type) = @_;
-    return showOLEDMsg(  [split(/\\n/, __($messages{"INITING_$type"}))]  );
-}
-
-sub getBarcodeReadMsg {
-    my ($barcode) = @_;
-    my @rows;
-    $rows[0] = __($messages{'BARCODE_READ'});
-    $rows[1] = __($messages{'PLEASE_WAIT'});
-    $rows[2] = __($messages{'BLANK_ROW'});
-    $rows[3] = centerRow($barcode);
-    return \@rows;
-}
-
-=head2 showOLEDMsg
-
-@PARAM1 ARRAYRef of String, 20-character-long messages.
-
-=cut
-
-my $display = OLED::Client->new();
-sub showOLEDMsg {
-    my ($msgs) = @_;
-
-    my $err;
-    eval {
-        #Prevent printing more than the screen can handle
-        my $rows = scalar(@$msgs);
-        $rows = 4 if $rows > 4;
-
-        for (my $i=0 ; $i<$rows ; $i++) {
-            $l->info("showOLEDMsg():> $i: ".$msgs->[$i]) if $l->is_info;
-            my $rv = $display->printRow($i, $msgs->[$i]);
-            $err = 1 unless ($rv =~ /^200/);
-        }
-        $display->endTransaction();
-    };
-    $l->error("showOLEDMsg() $@") if $@;
-
-    return $err ? 0 : 1;
-}
-
-sub _getAccessMsg {
-    my ($authorization, $cacheUsed) = @_;
-
-    my @msg;
-    push(@msg, split(/\\n/, __($messages{'ACCESS_DENIED'}))) if $authorization < 0;
-    push(@msg, split(/\\n/, __($messages{$authorization})));
-    push(@msg, split(/\\n/, __($messages{'OPEN_AT'}).' '.$packageHack{openingTime}.'-'.$packageHack{closingTime})) if $authorization == ERR_CLOSED;
-    push(@msg, split(/\\n/, __($messages{'CONTACT_LIBRARY'}))) if $authorization < 0;
-    push(@msg, split(/\\n/, __($messages{'CACHE_USED'}))) if $cacheUsed;
-
-    if ($authorization > 0) { #Only print a happy-happy-joy-joy message on success ;)
-        my $happyHappyJoyJoy = SSAuthenticator::Greetings::random();
-        push(@msg, split(/\\n/, __($happyHappyJoyJoy))) if $happyHappyJoyJoy;
-    }
-
-    #"please wait" might be already written on the screen.
-    #Make sure it is overwritten when auth status is known.
-    #So user doesnt see,
-    #  "Auth succeess"
-    #  "Please wait"
-    if (scalar(@msg) < 2) { #If there is only one row to be printed
-        #Append two blank rows
-        push(@msg, '                    ');
-        push(@msg, '                    ');
-    }
-
-    return \@msg;
-}
-
-=head3 centerRow
-
-Centers the given row to fit the 20-character wide OLED-display
-
-=cut
-
-sub centerRow {
-    my $le = length($_[0]);
-    return substr($_[0], 0, 20) if $le >= 20;
-    my $padding = (20 - $le) / 2;
-    my $pLeft = floor($padding);
-    my $pRight = ceil($padding);
-    return sprintf("\%${pLeft}s\%s\%${pRight}s", "", $_[0], "");
 }
 
 =HEAD2 isAuthorized
@@ -230,26 +92,44 @@ sub centerRow {
 =cut
 
 sub isAuthorized {
-    my ($cardNumber) = @_;
-    my ($authorization, $cacheUsed) = canUseLibrary($cardNumber);
-    $l->info("canUseLibrary() returns \$authorization=".($authorization || '').", \$cacheUsed=".($cacheUsed || '')) if $l->is_info;
+    my ($trans, $cardnumber) = @_;
+    checkCardPermission($trans, $cardnumber);
+    $l->info("checkCardPermission() returns \$authorization=".($trans->cardAuthz || '').", \$cacheUsed=".($trans->cardAuthzCacheUsed || '')) if $l->is_info;
 
-    my $open = isLibraryOpen();
-    $l->info("isLibraryOpen() returns \$open=".($open || '')) if $l->is_info;
-    if ($authorization > 0 && not($open)) {
-        $authorization = $open;
+
+    if ($trans->cardAuthz > 0 && config()->param('RequirePIN')) {
+        try {
+            checkPIN($trans, $cardnumber);
+        } catch {
+            if (blessed($_) && $_->isa('SSAuthenticator::Exception::KeyPad::WaitTimeout')) {
+                $trans->pinAuthn(ERR_PINTIMEOUT);
+                $keyPad->turnOff();
+            }
+            elsif (blessed($_)) { $_->rethrow(); }
+            else { die $_; }
+        };
     }
 
-    #Don't extend cache duration if there is a cache hit. Original date of checking is important
-    updateCache($cardNumber, $authorization)
-        if (not($cacheUsed) && $authorization != ERR_BADCARD && $authorization != ERR_ERR
-                            && $authorization != ERR_NOTCACHED && $authorization != ERR_CLOSED
-        );
+    if (config()->param('RequirePIN') && $trans->cardAuthz > 0 && $trans->pinAuthn > 0) {
+        $trans->auth(1);
+    }
+    elsif (not(config()->param('RequirePIN')) && $trans->cardAuthz > 0) {
+        $trans->auth(1)
+    }
+    else {
+        $trans->auth(0);
+    }
+    $trans->cacheUsed($trans->pinAuthnCacheUsed || $trans->cardAuthzCacheUsed);
 
-    return ($authorization, $cacheUsed);
+#    Time::HiRes::sleep(1);
+#    SSAuthenticator::Device::RGBLed::ledShow();
+#    SSAuthenticator::RTTTL::playZelda();
+#    SSAuthenticator::OLED::allYourBaseAreBelongToUs();
+
+    return $trans;
 }
 
-=head2 canUseLibrary
+=head2 checkCardPermission
 
 Checks if the given borrower represented by the given cardnumber can access the
 self-service resource.
@@ -261,49 +141,33 @@ Second alternative is to use the existing cache to see if the user is remembered
 
 =cut
 
-sub canUseLibrary {
-    my ($cardNumber) = @_;
-
-    my $authorized;
-    my $cacheUsed;
-    my $timedOut;
+sub checkCardPermission {
+    my ($trans, $cardnumber) = @_;
 
     try {
-
-        if ($ENV{SSA_TEST_MODE}) { #Is this anymore necessary?
-            my $start = time;
-            $authorized = isAuthorizedApi($cardNumber);
-            my $duration = time - $start;
-            $timedOut = ($duration >= SSAuthenticator::Config::getTimeoutInSeconds()) ? 1 : 0;
-        }
-        else {
-            $authorized = isAuthorizedApi($cardNumber);
-        }
-
+        $trans->cardAuthz(isAuthorizedApi($cardnumber));
     } catch {
-        if (blessed($_) && $_->isa('SSAuthenticator::Exception::HTTPTimeout')) {
-            $timedOut = 1;
-        }
-        elsif (blessed($_)) { $_->rethrow(); }
-        else { die $_; }
+        $l->fatal("isAuthorizedApi() died with error:\n".$l->flatten($_));
+        $trans->cardAuthz(ERR_SERVER);
     };
-
-    $l->warn("isAuthorizedApi() timed out") if $timedOut;
-    $l->info("isAuthorizedApi() returns ".($authorized || '')) if $l->is_info;
+    $l->info("isAuthorizedApi() returns ".($trans->cardAuthz || ''));
 
     # Check if we got response from REST API
-    if (defined $authorized) {
-        return ($authorized, $cacheUsed);
-    } else {
-        $authorized = isAuthorizedCache($cardNumber);
-        $l->info("isAuthorizedCache() returns ".($authorized || '')) if $l->is_info;
-
-        if ($authorized && $authorized != ERR_NOTCACHED) {
-            $cacheUsed = 1;
+    if ($trans->cardAuthz != ERR_SERVER && $trans->cardAuthz != ERR_SERVERCONN && $trans->cardAuthz != ERR_API_AUTH) {
+        #Don't extend cache duration if there is a cache hit. Original date of checking is important
+        if (not($trans->cardAuthzCacheUsed) &&
+            $trans->cardAuthz != ERR_BADCARD &&
+            $trans->cardAuthz != ERR_SERVER &&
+            $trans->cardAuthz != ERR_SERVERCONN &&
+            $trans->cardAuthz != ERR_API_AUTH &&
+            $trans->cardAuthz != ERR_CLOSED) {
+            updateCache($trans, $cardnumber, $trans->cardAuthz);
         }
+        return $trans;
+    } else {
+        checkCard_tryCache($trans, $cardnumber);
     }
-
-    return ($authorized, $cacheUsed);
+    return $trans;
 }
 
 =head2 isAuthorizedApi
@@ -318,27 +182,31 @@ Connects to the Koha REST API to see if the cardnumber belongs to a well-behavin
 =cut
 
 sub isAuthorizedApi {
-    my ($cardNumber) = @_;
+    my ($cardnumber) = @_;
+    SSAuthenticator::API::isMalfunctioning(0);
 
-    my $httpResponse = SSAuthenticator::API::getApiResponse($cardNumber);
-
-    my $body = $httpResponse ? decodeContent($httpResponse) : {};
-    my $err = $body->{error} || '';
-    my $permission = $body->{permission} || '';
-    my $status = $httpResponse ? $httpResponse->code() : '';
-
-    if ($httpResponse && blessed($httpResponse) && $httpResponse->isa('HTTP::Response')) {
-        $l->info("getApiResponse() returns a ".ref($httpResponse)." with \$status=$status, \$permission=$permission, \$err=$err") if $l->is_info;
-    }
-    else {
-        $l->error("getApiResponse() returns '".($httpResponse || '')."' instead of a HTTP:Response-object!!") if $l->is_error;
-    }
+    my ($httpResponse, $body, $err, $permission, $status) = SSAuthenticator::API::getApiResponse($cardnumber);
 
     if ($status eq 401 || $status eq 403) {
+        SSAuthenticator::API::isMalfunctioning(ERR_API_AUTH);
         return ERR_API_AUTH;
+    }
+    elsif ($status eq 404 && $httpResponse->header('Content-Type') =~ /text.html/) {
+        SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
+        return ERR_SERVER;
     }
     elsif ($status eq 404) {
         return ERR_BADCARD;
+    }
+    elsif ($status =~ /^510/) { #Statuses starting with 510, LWP::UserAgent connectivity issues
+        $l->error("isAuthorizedApi($cardnumber) REST API cannot connect to server. Error:\n".$httpResponse->as_string) if $l->is_error;
+        SSAuthenticator::API::isMalfunctioning(ERR_SERVERCONN);
+        return ERR_SERVERCONN;
+    }
+    elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
+        $l->error("isAuthorizedApi($cardnumber) REST API returns server error:\n".$httpResponse->as_string) if $l->is_error;
+        SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
+        return ERR_SERVER;
     }
     elsif ($status eq 200 && $err) {
         return ERR_UNDERAGE if $err eq 'Koha::Exception::SelfService::Underage';
@@ -346,341 +214,307 @@ sub isAuthorizedApi {
         return ERR_BBC      if $err eq 'Koha::Exception::SelfService::BlockedBorrowerCategory';
         return ERR_REVOKED  if $err eq 'Koha::Exception::SelfService::PermissionRevoked';
         if ($err eq 'Koha::Exception::SelfService::OpeningHours') {
-            $packageHack{openingTime} = $body->{startTime};
-            $packageHack{closingTime} = $body->{endTime};
+            SSAuthenticator::SharedState::set('openingTime', $body->{startTime});
+            SSAuthenticator::SharedState::set('closingTime', $body->{endTime});
             return ERR_CLOSED;
         }
         return ERR_NAUGHTY  if $err eq 'Koha::Exception::SelfService';
-        return ERR_ERR;
+        return ERR_SERVER;
     }
     elsif ($status eq 200 && $permission) {
-        return $permission ? OK : ERR_ERR;
-    }
-    elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
-        $l->error("isAuthorizedApi($cardNumber) REST API returns server error:\n".$httpResponse->as_string) if $l->is_error;
-        return undef;
+        return $permission ? OK : ERR_SERVER;
     }
 
     $l->error("isAuthorizedApi() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response") if $l->is_error;
-    return undef; #For some reason server doesn't respond. Fall back to using cache.
+    SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
+    return ERR_SERVER; #For some reason server doesn't respond. Fall back to using cache.
 }
 
-=head2 decodeContent
+# returns 1 on cache hit
+sub checkCard_tryCache {
+    my ($trans, $cardnumber) = @_;
+    if (my $cache = db()->{$cardnumber}) {
+        if ($cache->{access}) {
+            $trans->cardAuthz($cache->{access});
+            $trans->cardAuthzCacheUsed(1);
+            $l->info("checkCard_tryCache($cardnumber) cache hit auth='".($trans->cardAuthz || '')."'");
+            return 1;
+        }
+    }
+    $trans->cardAuthzCacheUsed(0);
+    return 0;
+}
 
-Extracts the body parameters from the given HTTP::Response-object
+sub checkPIN {
+    my ($trans, $cardnumber) = @_;
+    $keyPad->turnOn();
+    $keyPad->_transaction_new();
+    SSAuthenticator::OLED::showEnterPINMsg($trans);
+    while($keyPad->wait_for_key()) {
+        $trans->pinLatestKeyStatus($keyPad->maybe_transaction_complete());
+        if    ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW) {
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+        }
+        elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_OVERFLOW) {
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            SSAuthenticator::OLED::showPINStatusOverflow($trans);
+            $trans->pinCode($keyPad->{key_buffer});
+            $keyPad->turnOff();
+            return $trans;
+        }
+        elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_MAYBE_DONE) {
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            checkPIN_tryPIN($trans, $cardnumber, $keyPad->{key_buffer});
+            if ($trans->pinAuthn > 0) {
+                $trans->pinCode($keyPad->{key_buffer});
+                SSAuthenticator::OLED::showPINStatusOKPIN($trans);
+                $keyPad->turnOff();
+                return $trans;
+            }
+        }
+        elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_DONE) {
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            checkPIN_tryPIN($trans, $cardnumber, $keyPad->{key_buffer});
+            if ($trans->pinAuthn > 0) {
+                $trans->pinCode($keyPad->{key_buffer});
+                SSAuthenticator::OLED::showPINStatusOKPIN($trans);
+                $keyPad->turnOff();
+                return $trans;
+            }
+            else {
+                $trans->pinCode($keyPad->{key_buffer});
+                SSAuthenticator::OLED::showPINStatusWrongPIN($trans);
+                $keyPad->turnOff();
+                return $trans;
+            }
+        }
+    }
+}
 
-@RETURNS HASHRef of body parameters decoded or an empty HASHRef is errors happened.
-@DIE     if HTTP::Response content is not valid JSON or if content doesn't exist
+=head checkPIN_tryPIN
+
+The cached PIN code is invalidated when it is inputted wrongly.
 
 =cut
 
-my $jsonParser = JSON::XS->new();
-sub decodeContent {
-    my ($response) = @_;
+sub checkPIN_tryPIN {
+    my ($trans, $cardnumber, $pin) = @_;
+    $trans->pinAuthnCacheUsed(0);
 
-    my $responseContent = $response->decoded_content(default_charset => 'utf8');
-    $l->trace("\$responseContent: ".Data::Dumper::Dumper($responseContent)) if $l->is_trace;
-    unless ($responseContent) {
-        $responseContent = $response->{_content};
-        $l->info("Couldn't decode \$responseContent, working with raw content: ".Data::Dumper::Dumper($responseContent)) if $l->is_info;
+    if (SSAuthenticator::API::isMalfunctioning()) { # Getting the card permissions from the API might have failed, then fall back to cache.
+        checkPIN_tryCache($trans, $cardnumber, $pin);
+        return;
     }
-
-    my $body;
-    eval {
-        die "\$responseContent is not defined!" unless $responseContent;
-        $l->info("decodeContent() \$responseContent=$responseContent") if $l->is_info;
-        $body = $jsonParser->decode($responseContent);
+    try {
+        $trans->pinAuthn(isAuthorizedApiPIN($cardnumber, $pin));
+    } catch {
+        $l->fatal("isAuthorizedApiPIN() died with error:\n".$l->flatten($_));
+        $trans->pinAuthn(ERR_SERVER);
     };
-    #In some strange cases the $responseContent is already a HASHRef of decoded JSON parameters.
-    #There is a ghost in the shell making HTTP::Response return HASHRefs on one request, and then again
-    #decoded strings of HTTP Request body on some other requests.
-    if ($@) {
-        $l->error("Cannot decode HTTP::Response:\n".$response->as_string()."\nCONTENT: ".Data::Dumper::Dumper($responseContent)."\nJSON::decode_json ERROR: ".Data::Dumper::Dumper($@)) if $l->is_error();
+    $l->info("isAuthorizedApiPIN() returns ".($trans->pinAuthn || ''));
 
-        if (ref($responseContent) eq 'HASH') {
-            $body = $responseContent;
-            $l->error("Looks like \$responseContent is already a HASHRef. Trying to make it work.") if $l->is_error();
+    # Check if we got response from REST API
+    if ($trans->pinAuthn == OK) {
+        updateCache($trans, $cardnumber, undef, $pin);
+        return;
+    }
+    elsif ($trans->pinAuthn == ERR_PINBAD || $trans->pinAuthn == ERR_PINTIMEOUT) {
+        return;
+    }
+    else {
+        checkPIN_tryCache($trans, $cardnumber, $pin);
+        return;
+    }
+}
+
+# returns 1 on cache hit
+sub checkPIN_tryCache {
+    my ($trans, $cardnumber, $pin) = @_;
+    if (my $cache = db()->{$cardnumber}) {
+        if ($cache->{pin}) {
+            $trans->pinAuthn((SSAuthenticator::Password::check_password($cardnumber, $pin, $cache->{pin})) ? OK : ERR_PINBAD);
+            $trans->pinAuthnCacheUsed(1);
+            $l->info("checkPIN_tryCache($cardnumber) cache hit auth='".($trans->pinAuthn || '')."'");
+            return 1;
         }
     }
-
-    return $body;
+    $trans->pinAuthnCacheUsed(0);
+    return 0;
 }
 
-sub isLibraryOpen {
-    my $libraryName = config()->param('LibraryName');
-    # TODO:
-    # Request data from API and fallback to cache if not possible
-    return 1 if 1;
-    return ERR_CLOSED;
-}
+=head2 isAuthorizedApi
 
-sub isAuthorizedCache {
-    my ($cardNumber) = @_;
-    if (db()->exists($cardNumber)) {
-        my $patronInfo = db()->get($cardNumber);
-        $l->debug("isAuthorizedCache() \$cardNumber=$cardNumber exists and has \$status=".$$patronInfo{access}) if $l->is_debug;
-        return $$patronInfo{access};
-    } else {
-        $l->debug("isAuthorizedCache() \$cardNumber=$cardNumber not cached") if $l->is_debug;
-        return ERR_NOTCACHED;
+Connects to the Koha REST API to see if the cardnumber + PIN-code match
+
+@PARAM1 String, cardnumber
+@PARAM1 String, PIN
+@RETURNS Integer, OK, if authorized
+                  ERR_* if not
+
+=cut
+
+sub isAuthorizedApiPIN {
+    my ($cardnumber, $pin) = @_;
+    SSAuthenticator::API::isMalfunctioning(0);
+
+    my ($httpResponse, $body, $err, $permission, $status) = SSAuthenticator::API::getPINResponse($cardnumber, $pin);
+
+    if ($status eq 403) {
+        SSAuthenticator::API::isMalfunctioning(ERR_API_AUTH);
+        return ERR_API_AUTH;
     }
+    elsif ($status eq 404) {
+        return ERR_BADCARD;
+    }
+    elsif ($status =~ /^510/) { #Statuses starting with 510, LWP::UserAgent connectivity issues
+        $l->error("isAuthorizedApiPIN($cardnumber) REST API cannot connect to server. Error:\n".$httpResponse->as_string) if $l->is_error;
+        SSAuthenticator::API::isMalfunctioning(ERR_SERVERCONN);
+        return ERR_SERVERCONN;
+    }
+    elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
+        $l->error("isAuthorizedApiPIN($cardnumber) REST API returns server error:\n".$httpResponse->as_string) if $l->is_error;
+        SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
+        return ERR_SERVER;
+    }
+    elsif ($status =~ /^2\d\d$/) {
+        return $permission ? OK : ERR_PINBAD;
+    }
+    if ($status eq 401) {
+        return ERR_PINBAD;
+    }
+
+    $l->error("isAuthorizedApiPIN() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response") if $l->is_error;
+    SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
+    return ERR_SERVER; #For some reason server doesn't respond. Fall back to using cache.
 }
 
 sub grantAccess {
-    my ($authorization, $cacheUsed) = @_;
+    my ($trans) = @_;
     my $doorOpenDuration = SSAuthenticator::Config::getDoorOpenDuration() / 1000; #Turn ms to seconds
 
     lockControl()->on();
-    my $doorOpenStartTime = Time::HiRes::time();
-    ledOn('green');
+    SSAuthenticator::Device::RGBLed::ledOn('green');
 
-    showAccessMsg($authorization, $cacheUsed);
-    playAccessBuzz();
+    SSAuthenticator::OLED::showAccessMsg($trans);
+    SSAuthenticator::RTTTL::playAccessBuzz();
 
     #Wait for the specified amount of time to keep the door relay closed.
     #This can be used to keep the doors open longer, or to prolong the opening signal to a building automation system.
-    my $doorOpenTimeLeft = $doorOpenDuration - (Time::HiRes::time() - $doorOpenStartTime);
-    Time::HiRes::sleep($doorOpenTimeLeft);
+    Time::HiRes::sleep($doorOpenDuration) if ($doorOpenDuration > 0);
     lockControl()->off();
 
-    my $signalingTimeLeft = 1 - Time::HiRes::time() - $doorOpenStartTime; # Make the LED display for atleast one second.
+    my $signalingTimeLeft = 2 - $doorOpenDuration; # Make the RGB LED displays for atleast one second.
     Time::HiRes::sleep($signalingTimeLeft) if ($signalingTimeLeft > 0);
-    ledOff('green');
-}
-
-sub playAccessBuzz {
-    playRTTTL('toveri_access_granted');
-}
-sub playDenyAccessBuzz {
-    playRTTTL('toveri_access_denied');
-}
-
-=head2 playRTTTL
-
-Plays the given song.
-The player is forked to the background using fork().
-If the player takes longer than 10min to play the song, eg. the player hangs,
-the player is made to exit cleanly.
-
- @param1 {String} Name of the song in the rtttl-player library to play
-
-=cut
-
-sub playRTTTL {
-    my ($song, $timeout) = @_;
-    $timeout = 600 unless(defined($timeout));
-    if (my $pid = fork()) {
-        # Parent continues to this path, not blocked by the music player.
-        return 1;
-    }
-    else {
-        # Forked process now proceeds to play the song.
-        # When the song has been played, the forked process exits cleanly.
-        # Let's assume the song is never longer than 10 minutes.
-        #
-        # After this position, the Log4perl might no longer be available, or other services, if the parent Perl-process
-        # has already exited. Use only basic Perl here.
-        #
-        # If the player dies, it is caught upstream and causes very strange problems with two parallel processes in the
-        # SSAuthenticator::main()-loop
-        #
-        eval {
-            my @cmd = ('rtttl-player', '-p', config()->param('RTTTL-PlayerPin'), '-o', "song-$song");
-            if (timeout_call(
-                $timeout,
-                sub {
-                    system(@cmd);
-                    if ($? == -1) {
-                        warn "failed to execute 'rtttl-player': $!\n";
-                    }
-                    elsif ($? & 127) {
-                        warn sprintf "rtttl-player died with signal %d, %s coredump\n",
-                                     ($? & 127), ($? & 128) ? 'with' : 'without';
-                    }
-                    else {
-                        my $rv = $? >> 8;
-                        warn sprintf "rtttl-player exited with value %d\n", $rv if $rv != 0;
-                    };
-                }
-            )) {
-                warn "Command '@cmd' timed out!";
-            }
-        };
-        if ($@) {
-            warn $@;
-            exit(666);
-        }
-        exit(0);
-    }
+    SSAuthenticator::Device::RGBLed::ledOff('green');
 }
 
 sub denyAccess {
-    my ($authorization, $cacheUsed) = @_;
+    my ($trans) = @_;
 
-    ledOn('red');
-    showAccessMsg($authorization, $cacheUsed);
-    playDenyAccessBuzz();
+    SSAuthenticator::Device::RGBLed::ledOn('red');
+    SSAuthenticator::OLED::showAccessMsg($trans);
+    SSAuthenticator::RTTTL::playDenyAccessBuzz();
 
     # Make the LED display for atleast one second.
-    Time::HiRes::sleep(1);
+    Time::HiRes::sleep(2);
 
-    ledOff('red');
+    SSAuthenticator::Device::RGBLed::ledOff('red');
 }
 
 sub updateCache {
-    my ($cardNumber, $authStatus) = @_;
-    $l->debug("updateCache() $cardNumber cached using \$authStatus=$authStatus") if $l->is_debug;
-    db()->put($cardNumber, {time => localtime,
-                        access => $authStatus});
+    my ($trans, $cardnumber, $authStatus, $pin) = @_;
+    $l->debug("updateCache() $cardnumber cached using".($authStatus ? " \$authStatus=$authStatus" : "").($pin ? " \$pin=*" : "")) if $l->is_debug;
+    my $db = db();
+    $db->{$cardnumber} = {} unless $db->{$cardnumber};
+    $db->{$cardnumber}->{time} = localtime;
+    if (defined($authStatus)) {
+        $db->{$cardnumber}->{access} = $authStatus;
+        $trans->cardCached(1);
+    }
+    if (defined($pin)) {
+        $db->{$cardnumber}->{pin} = SSAuthenticator::Password::hash_password($pin, $cardnumber);
+        $trans->pinCached(1);
+    }
 }
 
 sub removeFromCache {
-    my ($cardNumber) = @_;
-    db()->delete($cardNumber);
+    my ($trans, $cardnumber, $authStatus, $pin) = @_;
+
+    if (not($authStatus || $pin) || ($authStatus && $pin)) {
+        $trans->cacheFlushed(1);
+        $trans->cardCacheFlushed(1);
+        $trans->pinCacheFlushed(1);
+        return db()->delete($cardnumber);
+    }
+    if ($authStatus) {
+        $trans->cardCacheFlushed(1);
+        return db()->{$cardnumber}->delete('access');
+    }
+    if ($pin) {
+        $trans->pinCacheFlushed(1);
+        return db()->{$cardnumber}->delete('pin');
+    }
 }
 
 sub controlAccess {
-    my ($cardNumber) = @_;
-    my ($authorizationStatus, $cacheUsed) = isAuthorized($cardNumber);
+    my ($cardnumber, $trans) = @_;
 
-    if ($authorizationStatus > 0) {
-        $l->info("controlAccess($cardNumber):> Granting access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef')) if $l->is_info;
-        grantAccess($authorizationStatus, $cacheUsed);
+    $l->info("main() Read barcode '$cardnumber'") if $l->is_info;
+    SSAuthenticator::OLED::showBarcodePostReadMsg($trans, $cardnumber) if config()->param('OLED_ShowCardNumberWhenRead');
+    #sleep 1; #DEBUG: Sleep a bit to make more sense out of the barcode on the OLED-display.
+
+    isAuthorized($trans, $cardnumber);
+
+    $l->info("controlAccess($cardnumber):> Access controls checked and auth=".$trans->auth) if $l->is_info;
+    $l->debug("controlAccess($cardnumber):> Transaction=".$trans->statusesToString) if $l->is_debug;
+    if ($trans->auth > 0) {
+        grantAccess($trans);
     } else {
-        $l->info("controlAccess($cardNumber):> Denying access with \$authorizationStatus=$authorizationStatus, \$cacheUsed=".($cacheUsed || 'undef')) if $l->is_info;
-        denyAccess($authorizationStatus, $cacheUsed);
+        denyAccess($trans);
     }
-}
-
-sub getBarcodeSeparator {
-    # TODO: Check if param exists before comparing.
-    my $conf = config();
-    if ($conf->param('CarriageReturnAsSeparator') && $conf->param('CarriageReturnAsSeparator') eq "true") {
-        $l->info("using \\r as barcode separator") if $l->is_info;
-        return "\r";
-    } else {
-        $l->info("using \\n as barcode separator") if $l->is_info;
-        return "\n";
-    }
-}
-
-sub configureBarcodeScanner {
-    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
-    if    ($brm =~ /^GFS4400$/) {
-        my $configurer = SSAuthenticator::AutoConfigurer->new;
-        $configurer->configure();
-    }
-    elsif ($brm =~ /^WGC300UsbAT$/) {
-        GetReader()->autoConfigure();
-    }
-    $l->info("Barcode scanner '$brm' configured") if $l->is_info;
-}
-
-sub GetReader {
-    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
-    if    ($brm =~ /^GFS4400$/) {
-        ##Sometimes the barcode scanner can disappear and reappear during/after configuration. Try to find a barcode scanner handle
-        for (my $tries=0 ; $tries < 10 ; $tries++) {
-            open(my $device, "<", "/dev/barcodescanner");
-            return $device if $device;
-            sleep 1;
-        }
-    }
-    elsif ($brm =~ /^WGC300UsbAT$/) {
-        require SSAuthenticator::Device::WGC300UsbAT;
-        return SSAuthenticator::Device::WGC300UsbAT->new();
-    }
-}
-
-sub ReadBarcode {
-    my ($device, $timeout) = @_;
-    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
-    if    ($brm =~ /^GFS4400$/) {
-        timeout_call(
-            $timeout,
-            sub {return <$device>}
-        );
-    }
-    elsif ($brm =~ /^WGC300UsbAT$/) {
-        return $device->pollData($timeout);
-    }
-}
-
-# Flush buffers from possible repeated reads
-sub FlushBarcodeBuffers {
-    my ($device) = @_;
-    my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
-    if    ($brm =~ /^GFS4400$/) {
-        close $device;
-    }
-    elsif ($brm =~ /^WGC300UsbAT$/) {
-        $device->receiveData();
-    }
-}
-
-=head2 changeLanguage
-
-    SSAuthenticator::changeLanguage('fi_FI', 'UTF-8');
-
-Changes the language of the running process
-
-=cut
-
-sub changeLanguage {
-    my ($lang, $encoding) = @_;
-    $ENV{LANGUAGE} = $lang;
-    POSIX::setlocale(LC_ALL, "$lang.$encoding");
 }
 
 sub config {
     return SSAuthenticator::Config::getConfig();
 }
 
-sub setDefaultLanguage {
-    changeLanguage(
-        config()->param('DefaultLanguage'),
-        'UTF-8',
-    );
-    $l->info("setDefaultLanguage() ".config()->param('DefaultLanguage')) if $l->is_info;
-}
-
 sub main {
-    local $/ = getBarcodeSeparator();
+    local $/ = SSAuthenticator::BarcodeReader::getBarcodeSeparator();
 
-    showInitializingMsg('STARTING'); sleep 2;
+    SSAuthenticator::OLED::showInitializingMsg('STARTING'); sleep 2;
     eval {
-        setDefaultLanguage();
-        configureBarcodeScanner();
+        SSAuthenticator::I18n::setDefaultLanguage();
+        SSAuthenticator::BarcodeReader::configureBarcodeScanner();
+        SSAuthenticator::Device::RGBLed::init(config());
+        $keyPad = SSAuthenticator::Device::KeyPad::init(config()) if (config()->param('RequirePIN'));
     };
     if ($@) {
         $l->fatal("$@");
-        showInitializingMsg('ERROR');
+        SSAuthenticator::OLED::showInitializingMsg('ERROR');
         exit(1);
     }
 
     $l->info("main() Entering main loop");
-    showInitializingMsg('FINISHED');
+    SSAuthenticator::OLED::showInitializingMsg('FINISHED');
     while (1) {
         SSAuthenticator::Mailbox::checkMailbox();
 
-        my $device = GetReader();
+        my $device = SSAuthenticator::BarcodeReader::GetReader();
         $l->error("main() No barcode reader attached") && exit(1) unless $device;
 
-        my $cardNumber = ReadBarcode($device, 30);
-        if ($cardNumber) {
-            chomp($cardNumber);
-            $l->info("main() Read barcode '$cardNumber'") if $l->is_info;
-            showOLEDMsg(getBarcodeReadMsg($cardNumber)) if config()->param('OLED_ShowCardNumberWhenRead');
-            #sleep 1; #DEBUG: Sleep a bit to make more sense out of the barcode on the OLED-display.
+        $keyPad->flush_buffer() if $keyPad;
 
+        my $cardnumber = SSAuthenticator::BarcodeReader::ReadBarcode($device, 30);
+        if ($cardnumber) {
+            chomp($cardnumber);
             eval {
-                controlAccess($cardNumber);
+                controlAccess($cardnumber, SSAuthenticator::Transaction->new());
             };
             if ($@) {
-                $l->fatal("controlAccess($cardNumber) $@");
+                $l->fatal("controlAccess($cardnumber) $@");
             }
         }
-        FlushBarcodeBuffers($device);
+        SSAuthenticator::BarcodeReader::FlushBarcodeBuffers($device);
     }
 }
 

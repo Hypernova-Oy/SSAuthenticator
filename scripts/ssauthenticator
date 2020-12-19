@@ -6,12 +6,14 @@
 
 use Modern::Perl;
 use Carp;
+use Data::Printer;
 use Getopt::Long qw(:config no_ignore_case);
 
 use SSAuthenticator;
 use SSAuthenticator::Mailbox;
+use SSAuthenticator::Transaction;
 
-my ($help, $message, $verbose);
+my ($help, $message, $verbose, $barcodeReader, $apiTest);
 my @params;
 
 GetOptions(
@@ -19,6 +21,8 @@ GetOptions(
     'v|verbose=i'                 => \$verbose,
     'm|message=s'                 => \$message,
     'p|params=s'                  => \@params,
+    'b'                           => \$barcodeReader,
+    'a|api=s'                     => \$apiTest,
 );
 
 $ENV{SSA_LOG_LEVEL} = $verbose if $verbose;
@@ -48,6 +52,10 @@ It is recommended to use the script to send messages to the SSAuthenticator.
   -m Send a command to the mailbox
   -p Specify the parameter for mailbox commands
 
+Test barcode reader
+
+  -b Initialize only the barcode reader and poll for barcodes.
+
 EXAMPLES
 
     #Runs the SSAuthenticator-daemon using system-level configurations
@@ -56,6 +64,15 @@ EXAMPLES
     #Sends a "read virtual barcode 167A0123123"-command to the SSAuthenticator's mailbox
     ssauthenticator -m controlAccess -p 167A0123123
 
+    #Test the barcode reader, poll for barcodes only
+    ssauthenticator -b
+
+    #Test API calls - Check card permissions
+    ssauthenticator --api="card:167A006007"
+
+    #Test API calls - Check PIN code
+    ssauthenticator --api="pin:167A006007:1234"
+
 USAGE
 
 if ($help) {
@@ -63,9 +80,32 @@ if ($help) {
   exit 0;
 }
 
-if ($message) {
-    SSAuthenticator::Mailbox::sendMessage($message, @params);
+if ($barcodeReader) {
+  my $bc = SSAuthenticator::BarcodeReader::GetReader();
+  $bc->autoConfigure();
+  print("Barcode reader waiting\n");
+  while (1) {
+    print(($bc->pollData() || '')."\n");
+  }
+}
+elsif ($apiTest) {
+  if ($apiTest =~ /^(card):([^:]+)/) {
+    my $trans = SSAuthenticator::Transaction->new();
+    SSAuthenticator::checkCardPermission($trans, $2);
+    Data::Printer::p($trans);
+  }
+  elsif ($apiTest =~ /^(pin):([^:]+):([^:]+)/) {
+    my $trans = SSAuthenticator::Transaction->new();
+    SSAuthenticator::checkPIN_tryPIN($trans, $2, $3);
+    Data::Printer::p($trans);
+  }
+  else {
+    die "Unknown --api command";
+  }
+}
+elsif ($message) {
+  SSAuthenticator::Mailbox::sendMessage($message, @params);
 }
 else {
-    SSAuthenticator->main();
+  SSAuthenticator->main();
 }

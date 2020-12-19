@@ -13,6 +13,7 @@ my $build = Module::Build->new(
         'Bot::BasicBot'      => undef,
         'Carp::Always'       => undef,
         'Config::Simple'     => undef,
+        'Crypt::Eksblowfish::Bcrypt' => undef,
         'Data::Alias'        => undef,
         'Data::Printer'      => undef,
         'DateTime'           => undef,

@@ -1,5 +1,6 @@
 # Copyright 2015 Vaara-kirjastot
 # Copyright (C) 2016 Koha-Suomi
+# Copyright 2021 Hypernova Oy
 #
 # This file is part of SSAuthenticator.
 
@@ -11,16 +12,24 @@ use DateTime::Format::HTTP;
 use DateTime;
 use Digest::SHA;
 use LWP::UserAgent;
+use HTTP::Headers;
 use HTTP::Request;
+use JSON::XS;
+use Scalar::Util qw(blessed);
 
 use SSAuthenticator::Config;
 use SSLog;
 
 my $l = bless({}, 'SSLog');
+my $lScraper = bless({category => 'scraper'}, 'SSLog');
 
+my $jsonParser = JSON::XS->new();
 
-use SSAuthenticator::Exception::HTTPTimeout;
-
+sub _getAPIClient {
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout(  SSAuthenticator::Config::getTimeoutInSeconds()  );
+    return $ua;
+}
 
 sub _makeSignature {
     my ($method, $userid, $headerXKohaDate, $apiKey) = @_;
@@ -41,14 +50,18 @@ sub _makeSignature {
 }
 =cut
 sub _prepareAuthenticationHeaders {
-    my ($userid, $dateTime, $method, $apiKey) = @_;
+    my ($dateTime, $method) = @_;
 
+    my $conf = SSAuthenticator::Config::getConfig();
+    my $userId = $conf->param("ApiUserName");
+    my $apiKey = $conf->param("ApiKey");
     my $headerXKohaDate = DateTime::Format::HTTP->format_datetime(
-	($dateTime || DateTime->now)
-	);
-    my $headerAuthorization = "Koha ".$userid.":"._makeSignature($method, $userid, $headerXKohaDate, $apiKey);
-    return {'X-Koha-Date' => $headerXKohaDate,
-	    'Authorization' => $headerAuthorization};
+        ($dateTime || DateTime->now)
+    );
+    return [
+        'X-Koha-Date'   => $headerXKohaDate,
+        'Authorization' => "Koha ".$userId.":"._makeSignature($method, $userId, $headerXKohaDate, $apiKey),
+    ];
 }
 
 =head2 getApiResponse
@@ -64,49 +77,51 @@ sub getApiResponse {
     my $conf = SSAuthenticator::Config::getConfig();
     my $requestUrl = $conf->param('ApiBaseUrl') . "/borrowers/ssstatus";
 
-    my $ua = LWP::UserAgent->new;
-    $ua->timeout(  SSAuthenticator::Config::getTimeoutInSeconds()  );
-    my $userId = $conf->param("ApiUserName");
-    my $apiKey = $conf->param("ApiKey");
-    my $authHeaders = _prepareAuthenticationHeaders($userId,
-                            undef,
-                            "GET",
-                            $apiKey);
-
-    my $date = $authHeaders->{'X-Koha-Date'};
-    my $authorization = $authHeaders->{'Authorization'};
+    my $ua = _getAPIClient();
 
     my $body = "cardnumber=$cardNumber";
     $body   .= "&branchcode=".$conf->param('LibraryName') if $conf->param('LibraryName');
 
-    my $request = HTTP::Request->new(GET => $requestUrl);
-    $request->header('X-Koha-Date' => $date);
-    $request->header('Authorization' => $authorization);
-    $request->header('Content-Type' => 'application/x-www-form-urlencoded');
-    $request->header('Content-Length' => length($body));
-    $request->content($body);
+    my $headers = HTTP::Headers->new(
+        @{_prepareAuthenticationHeaders(undef, "GET")},
+        'Content-Type' => 'application/x-www-form-urlencoded',
+        'Content-Length' => length($body),
+    );
 
-    if ($l->is_trace) {
-        $l->trace("Sending request: ".$request->as_string());
+    my $request = HTTP::Request->new(GET => $requestUrl, $headers, $body);
+
+    $lScraper->info($request->as_string);
+    my $res = _do_api_request($ua => $request);
+    $lScraper->info($res->as_string);
+
+    unless ($res) {
+        die "getApiResponse() didn't get a proper Response object?";
     }
 
-    my $response = $ua->request($request);
-
-    unless ($response) {
-        die "getApiResponse($cardNumber) didn't get a proper Response object?";
+    if ($res->header('Client-Warning') && $res->header('Client-Warning') eq 'Internal response') { #Internal LWP::UserAgent error
+        return _handleInternalLWPClientError($res);
     }
 
-    if (my $clientWarning = $response->header('Client-Warning')) { #Internal LWP::UserAgent error
-        $l->debug("Receiving the response failed with HTTP Client error: "._parseClientErrorToString($response));
-    }
-    elsif ($l->is_debug) {
-        $l->debug("Got response: ".$response->as_string());
-    }
-
-    return $response;
+    my $body2 = _decodeContent($res);
+    my $err = $body2->{error} || '';
+    my $permission = $body2->{permission} || 0;
+    return ($res, $body2, $err, $permission, $res->code);
 }
 
-=head2 _parseClientErrorToString
+sub _handleResponse {
+    my ($res) = @_;
+    unless ($res) {
+        die "getApiResponse() didn't get a proper Response object?";
+    }
+
+    if (my $clientWarning = $res->header('Client-Warning')) { #Internal LWP::UserAgent error
+        return _handleInternalLWPClientError($res);
+    }
+    return _handleAPIResponse($res);
+    #return ($response, $body, $err, $permission, $status); # Signature
+}
+
+=head2 _handleInternalLWPClientError
 
 LWP::UserAgent might get timeouted by Sys::SigAction::timeout_call() and this causes a cryptic
     500 HASH(0x78a078)
@@ -123,34 +138,110 @@ Work around this limitation here, and try to parse the special internal response
 
 Alternatively one can just set the timeout to the LWP::UserAgent :(
 
+Regardless LWP::UserAgent for some reason doesnt throw anything so the no connection and timeout situations need to be handled differently.
+such issues are flagged with HTTP 500 and Header Client-Warning.
+Remodel this to HTTP 510
 
 =cut
 
-sub _parseClientErrorToString {
+sub _handleInternalLWPClientError {
     my ($res) = @_;
 
-    my $code = $res->code() || '<Status code undef>' ;
-    my $message = $res->message() || '<Message undef>';
-    if (ref($message)) { #This can bug out and be a HASH
-        $message = $l->flatten($message);
+    if ($res->code != 500) {
+        $l->error("Strange LWP::UserAgent Client-Warning HTTP Status code '".$res->code."'. Should be 500?");
     }
-    my $headersStr = $res->headers_as_string() || '<Headers undef>';
-    my $content = $res->content() || '<Content undef>';
-    if ($content =~ /^HASH/) { #content is royally mangĺed
-        $content = $res->{_content}; #Dangerously directly access a private variable!
-    }
-    my $as_string = "$code $message\n$headersStr\n$content";
-
-    if ($message eq 'read timeout') {
-        #LWP::UserAgent probably killed by Sys::SigAction::timeout_call()
-        SSAuthenticator::Exception::HTTPTimeout->throw(error => "HTTP Request timed out");
-    }
-    if ($message eq '[{}]') {
-        #LWP::UserAgent probably killed by Sys::SigAction::timeout_call()
-        SSAuthenticator::Exception::HTTPTimeout->throw(error => "HTTP Request probably timeoutted");
+    $res->code(510);
+    if (not($res->content)) {
+        $l->error("Strange LWP::UserAgent Client-Warning HTTP content missing?");
     }
 
-    return $as_string;
+    return ($res, $res->decoded_content, $res->decoded_content, 0, $res->code);
+}
+
+sub _do_api_request { # Used to mock LWP::UserAgent without mocking it.
+    my ($ua, $request) = @_;
+    return $ua->request($request);
+}
+
+=head2 _decodeContent
+
+Extracts the body parameters from the given HTTP::Response-object
+
+@RETURNS HASHRef of body parameters decoded or an empty HASHRef is errors happened.
+@DIE     if HTTP::Response content is not valid JSON or if content doesn't exist
+
+=cut
+
+sub _decodeContent {
+    my ($res) = @_;
+
+    my $responseContent = $res->decoded_content;
+    unless ($responseContent) {
+        return {};
+    }
+
+    my $body;
+    if ($res->header('Content-Type') =~ /json/i) {
+        eval {
+            $body = $jsonParser->decode($responseContent);
+        };
+        if ($@) {
+            $l->error("Cannot decode HTTP::Response:\n".$res->as_string()."\nCONTENT: ".Data::Dumper::Dumper($responseContent)."\nJSON::decode_json ERROR: ".Data::Dumper::Dumper($@)) if $l->is_error();
+
+            if (ref($responseContent) eq 'HASH') {
+                $body = $responseContent;
+                $l->error("Looks like \$responseContent is already a HASHRef. Trying to make it work.");
+            }
+            else {
+                $body = {error => $@};
+            }
+        }
+    }
+
+    return $body;
+}
+
+sub getPINResponse {
+    my ($cardnumber, $pin) = @_;
+
+    my $conf = SSAuthenticator::Config::getConfig();
+    my $requestUrl = $conf->param('ApiBaseUrl') . "/auth/session";
+
+    my $ua = _getAPIClient();
+
+    my $body = "cardnumber=$cardnumber";
+    $body   .= "&password=".$pin;
+
+    my $headers = HTTP::Headers->new(
+        @{_prepareAuthenticationHeaders(undef, "POST")},
+        'Content-Type' => 'application/x-www-form-urlencoded',
+        'Content-Length' => length($body),
+    );
+
+    my $request = HTTP::Request->new(POST => $requestUrl, $headers, $body);
+
+    $lScraper->info($request->as_string);
+    my $res = _do_api_request($ua => $request);
+    $lScraper->info($res->as_string);
+
+    unless ($res) {
+        die "getApiResponse() didn't get a proper Response object?";
+    }
+
+    if ($res->header('Client-Warning') && $res->header('Client-Warning') eq 'Internal response') { #Internal LWP::UserAgent error
+        return _handleInternalLWPClientError($res);
+    }
+
+    my $body2 = _decodeContent($res);
+    my $err = $body2->{error} || '';
+    my $permission = ($body2->{sessionid}) ? 1 : 0;
+    return ($res, $body2, $err, $permission, $res->code);
+}
+
+my $isMalfunctioning = 0;
+sub isMalfunctioning {
+    $isMalfunctioning = $_[0] if (defined($_[0]));
+    return $isMalfunctioning;
 }
 
 1;

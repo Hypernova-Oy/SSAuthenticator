@@ -51,7 +51,6 @@ sub new {
   my @iglist = split(/\s*,\s*/, $iglist);
   $l->logdie("IRCBot needs config ircchannels") unless scalar(@iglist);
 
-$DB::single=1;
   $ircbot = $class->SUPER::new(
     server      => $server,
     port        => $port,

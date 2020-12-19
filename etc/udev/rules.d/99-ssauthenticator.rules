@@ -1,0 +1,1 @@
+SUBSYSTEM=="tty", ATTRS{idVendor}=="8888", ATTRS{idProduct}=="0007", OWNER="toveri", GROUP="toveri", SYMLINK+="ttyWGC300USBAt"

@@ -86,11 +86,11 @@ sub _isConfigValid {
     ##All mandatory params
     my @params = ('ApiBaseUrl', 'ApiUserName', 'ApiKey',
                   'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'DoorOffPin',
-                  'RTTTL-PlayerPin', 'Verbose', 'RandomGreetingChance',
+                  'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
                   'ConnectionTimeout', 'DoorOpenDuration',
                   'OLED_ShowCardNumberWhenRead', 'BarcodeReaderModel',
-                  'DoubleReadTimeout', 'Code39DecodingLevel');
+                  'DoubleReadTimeout', 'Code39DecodingLevel', 'RequirePIN', 'PINLength', 'PINTimeout', 'PINOnPin', 'PINOffPin');
                   # Not mandatory anymore
                   # 'LibraryName',
     foreach my $param (@params) {
@@ -165,7 +165,7 @@ sub _isConfigValid {
     ##BarcodeReaderModel
     my $brm = $c->param('BarcodeReaderModel');
     unless (grep {$brm eq $_} @supportedBarcodeReaderModels) {
-	warn "BarcodeReaderModel '$brm' is not supported. Supported models: [@supportedBarcodeReaderModels]";
+        warn "BarcodeReaderModel '$brm' is not supported. Supported models: [@supportedBarcodeReaderModels]";
         $returnValue = 0;
     }
 

@@ -20,7 +20,7 @@ sub init {
   my ($s, $portName) = @_;
 
   my $portObj = Device::SerialPort->new($portName, 0) || die "Can't open $portName: $!\n";
-  $portObj->baudrate(115200);
+  $portObj->baudrate(9600); #115200
   $portObj->parity("none");
   $portObj->databits(8);
   $portObj->stopbits(1);
@@ -31,7 +31,7 @@ sub init {
 
   # These are unnecessary on Ubuntu 18.04
   $portObj->read_char_time(0);     # don't wait for each character
-  $portObj->read_const_time(1000); # 1 second per unfulfilled "read" call
+  $portObj->read_const_time(0); # 1 second per unfulfilled "read" call
 
   $portObj->write_settings || die "write_settings failed: $!";
   $s->{dev} = $portObj;
@@ -56,8 +56,9 @@ sub sendCommand {
 
 sub pollData {
   my ($s, $timeout) = @_;
+  $timeout = 10 unless($timeout);
 
-  my $timeoutLeft = $timeout;
+  my $timeoutLeft = $timeout*10;
   my $chars = 0;
   my $buffer = "";
 
@@ -72,12 +73,13 @@ sub pollData {
       return $saw;
     }
     else {
+      Time::HiRes::sleep(0.1);
       $timeoutLeft--;
     }
   }
 
   if ($timeoutLeft == 0) {
-    $logger->trace("Timed out in '$timeout' seconds.");
+    $logger->trace("Timed out in '$timeout' seconds/ticks.");
   }
   return undef;
 }
@@ -113,7 +115,7 @@ sub DESTROY {
 # Initialize the singleton
 unless ($reader) {
   $reader = new(__PACKAGE__);
-  $reader->init("/dev/ttyACM0");
+  $reader->init("/dev/ttyWGC300USBAt");
   #$reader->autoConfigure();
 }
 

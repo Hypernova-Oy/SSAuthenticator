@@ -26,6 +26,7 @@ sub AUTOLOAD {
     unless (blessed($l)) {
          longmess "SSLog invoked with an unblessed reference??";
     }
+    $DB::single=1;
     unless ($l->{_log}) {
         $l->{_log} = get_logger($l);
     }
@@ -33,7 +34,9 @@ sub AUTOLOAD {
 }
 
 sub get_logger {
+    my ($l) = @_;
     initLogger() unless Log::Log4perl->initialized();
+    return Log::Log4perl->get_logger($l->{category}) if $l->{category};
     return Log::Log4perl->get_logger();
 }
 

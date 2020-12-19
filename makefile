@@ -1,8 +1,9 @@
 programName=ssauthenticator
 confDir=etc/$(programName)
+logDir=var/log/$(programName)
 systemdServiceDir=etc/systemd/system
-cacheDir=/var/cache/$(programName)
-udevDir=udev/rules.d
+cacheDir=var/cache/$(programName)
+udevDir=etc/udev/rules.d
 systemUdevDir=/lib/$(udevDir)
 systemPath=/usr/local/bin
 
@@ -47,15 +48,17 @@ configure:
 	cp --backup=numbered $(confDir)/daemon.conf /$(confDir)/
 	cp $(systemdServiceDir)/$(programName).service /$(systemdServiceDir)/$(programName).service
 
-	mkdir -p $(cacheDir)
-	touch $(cacheDir)/patron.db
+	mkdir -p /$(cacheDir)
+	touch /$(cacheDir)/patron.db
 
-	cp $(udevDir)/50-$(programName).rules $(systemUdevDir)/
+	mkdir -p /$(logDir)
+
+	cp $(udevDir)/99-$(programName).rules /$(udevDir)/
 
 unconfigure:
 	rm -r /$(confDir) || $(RC)
-	rm -r $(cacheDir)
-	rm $(systemUdevDir)/50-$(programName).rules
+	rm -r /$(cacheDir)
+	rm /$(udevDir)/99-$(programName).rules
 
 serviceEnable:
 	systemctl daemon-reload

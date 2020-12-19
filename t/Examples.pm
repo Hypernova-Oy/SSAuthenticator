@@ -45,7 +45,11 @@ BlueLEDPin 6
 RedLEDPin 13
 DoorPin 20
 DoorOffPin 21
-RTTTL-PlayerPin 18
+PINOnPin 22
+PINOffPin 26
+RequirePIN 1
+PINLength 4
+PINTimeout 1000
 Verbose 0
 ConnectionTimeout 5
 RandomGreetingChance 50

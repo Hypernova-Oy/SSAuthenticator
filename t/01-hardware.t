@@ -10,6 +10,7 @@ use GPIO::Relay;
 
 use SSAuthenticator;
 use SSAuthenticator::Config;
+use SSAuthenticator::OLED;
 
 my $defaultConfTempFile = t::Examples::writeDefaultConf();
 SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
@@ -21,23 +22,25 @@ subtest "Manually inspect LEDs", \&ledInspection;
 sub ledInspection {
     my $ledDuration = 1;
 
-    SSAuthenticator::showOLEDMsg(
+    SSAuthenticator::Device::RGBLed::init();
+
+    SSAuthenticator::OLED::showOLEDMsg(
         ["Turning red led on  ","for ".sprintf("%2.2f", $ledDuration)." seconds   "]);
-    ok(SSAuthenticator::ledOn('red'), "Red on");
+    ok(SSAuthenticator::Device::RGBLed::ledOn('red'), "Red on");
     sleep($ledDuration);
-    ok(SSAuthenticator::ledOff('red'), "Red off");
+    ok(SSAuthenticator::Device::RGBLed::ledOff('red'), "Red off");
 
-    SSAuthenticator::showOLEDMsg(
+    SSAuthenticator::OLED::showOLEDMsg(
         ["Turning green led on","for ".sprintf("%2.2f", $ledDuration)." seconds   "]);
-    ok(SSAuthenticator::ledOn('green'), "Green on");
+    ok(SSAuthenticator::Device::RGBLed::ledOn('green'), "Green on");
     sleep($ledDuration);
-    ok(SSAuthenticator::ledOff('green'), "Green off");
+    ok(SSAuthenticator::Device::RGBLed::ledOff('green'), "Green off");
 
-    SSAuthenticator::showOLEDMsg(
+    SSAuthenticator::OLED::showOLEDMsg(
         ["Turning blue led on ","for ".sprintf("%2.2f", $ledDuration)." seconds   "]);
-    ok(SSAuthenticator::ledOn('blue'), "Blue on");
+    ok(SSAuthenticator::Device::RGBLed::ledOn('blue'), "Blue on");
     sleep($ledDuration);
-    ok(SSAuthenticator::ledOff('blue'), "Blue off");
+    ok(SSAuthenticator::Device::RGBLed::ledOff('blue'), "Blue off");
 }
 
 subtest "Manually inspect the lock signaling relay", \&lockControl;
@@ -56,7 +59,7 @@ sub lockControl {
 }
 
 sub doubleLatchLockInspection {
-    SSAuthenticator::showOLEDMsg(
+    SSAuthenticator::OLED::showOLEDMsg(
         ["You should hear one ","click from the relay", "with 1 second delay ", "Door opens.         "]);
     sleep($readTime);
     ok(SSAuthenticator::lockControl()->on(), "Lock open signal on");
@@ -65,7 +68,7 @@ sub doubleLatchLockInspection {
 
     sleep(1);
 
-    SSAuthenticator::showOLEDMsg(
+    SSAuthenticator::OLED::showOLEDMsg(
         ["You should hear one ","click from the relay", "with 1 second delay ", "Door closes.        "]);
     sleep($readTime);
     ok(SSAuthenticator::lockControl()->on(), "Lock close signal on");
@@ -74,7 +77,7 @@ sub doubleLatchLockInspection {
 }
 
 sub singleLatchLockInspection {
-    SSAuthenticator::showOLEDMsg(
+    SSAuthenticator::OLED::showOLEDMsg(
         ["You should hear two ","clicks from the     ", "relay with 1 second ", "delay. Door opens.  "]);
     sleep($readTime);
     ok(SSAuthenticator::lockControl()->on(), "Door opened");
@@ -82,22 +85,14 @@ sub singleLatchLockInspection {
     ok(SSAuthenticator::lockControl()->off(), "Door closed");
 }
 
-SSAuthenticator::showOLEDMsg( #Flush excess rows
+SSAuthenticator::OLED::showOLEDMsg( #Flush excess rows
   ["                    ","                    ","                    ","                    "]);
 
 subtest "Manually inspect beeper.", \&beeperInspection;
 sub beeperInspection {
-    SSAuthenticator::showOLEDMsg(
+    SSAuthenticator::OLED::showOLEDMsg(
         ["You should hear the ","access granted sound"]);
-    ok(SSAuthenticator::playRTTTL('toveri_access_granted'), "Access granted sound played");
-}
-
-subtest "Manually inspect OLED display.", \&OLEDInspection;
-sub OLEDInspection {
-    SSAuthenticator::showOLEDMsg(
-        ["You should see the  ","'Access granted'    ","message             "]);
-    sleep($readTime);
-    ok(SSAuthenticator::showAccessMsg( SSAuthenticator::OK, 1 ), "OLED display works");
+    ok(SSAuthenticator::RTTTL::playAccessBuzz() || 1, "Access granted sound played");
 }
 
 t::Examples::rmConfig();

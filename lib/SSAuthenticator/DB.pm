@@ -21,17 +21,17 @@ Manage database access for this daemon
 my $l = bless({}, 'SSLog');
 
 my $CARDNUMBER_FILE = "/var/cache/ssauthenticator/patron.db";
+my $db = DBM::Deep->new($CARDNUMBER_FILE);
+
 sub getDB {
-    my ($newDB) = @_;
-    $CARDNUMBER_FILE = $newDB if $newDB;
-    my $CARDNUMBER_DB = DBM::Deep->new($CARDNUMBER_FILE);
-    return $CARDNUMBER_DB;
+    return $db;
 }
 
 sub setDB {
     my ($dbPath) = @_;
     my $oldCARDNUMBER_FILE = $CARDNUMBER_FILE;
     $CARDNUMBER_FILE = $dbPath;
+    $db = DBM::Deep->new($CARDNUMBER_FILE);
     return $oldCARDNUMBER_FILE;
 }
 
