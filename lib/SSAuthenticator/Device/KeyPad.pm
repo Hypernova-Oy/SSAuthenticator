@@ -146,7 +146,6 @@ sub maybe_transaction_complete {
 }
 
 sub turnOn {
-  return;
   my ($s) = @_;
   $s->{keypad_on_pin}->turnOn();
   Time::HiRes::sleep(0.1);
@@ -155,7 +154,6 @@ sub turnOn {
 }
 
 sub turnOff {
-  return;
   my ($s) = @_;
   $s->{keypad_off_pin}->turnOn();
   Time::HiRes::sleep(0.1);
