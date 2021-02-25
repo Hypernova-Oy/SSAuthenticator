@@ -69,5 +69,5 @@ gpu_mem=16
 max_usb_current=1
 dtoverlay=w1-gpio,gpiopin=4,pullup=on
 #dtoverlay=pi3-miniuart-bt
-#enable_uart=1
+enable_uart=1
 dtoverlay=disable-bt
