@@ -19,7 +19,7 @@ debianPackagedPerlModules=libtest-simple-perl libtest-mockmodule-perl \
 
 
 #Macro to check the exit code of a make expression and possibly not fail on warnings
-RC      := test $$? -lt 100 
+RC      := test $$? -lt 100
 
 
 build: compile
@@ -61,6 +61,9 @@ unconfigure:
 	rm /$(udevDir)/99-$(programName).rules
 
 serviceEnable:
+	# Stop serial getty from listening for serial connections on the Raspberry serial console
+	systemctl stop serial-getty@AMA0
+	systemctl mask serial-getty@AMA0
 	systemctl daemon-reload
 	systemctl enable $(programName)
 	systemctl restart $(programName)
