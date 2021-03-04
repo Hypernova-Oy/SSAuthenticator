@@ -250,7 +250,7 @@ sub checkPIN {
     $keyPad->turnOn();
     $keyPad->_transaction_new();
     SSAuthenticator::OLED::showEnterPINMsg($trans);
-    while($keyPad->wait_for_key()) {
+    while(defined($keyPad->wait_for_key())) {
         $trans->pinLatestKeyStatus($keyPad->maybe_transaction_complete());
         if    ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW) {
             SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});

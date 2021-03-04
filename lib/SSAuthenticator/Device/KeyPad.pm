@@ -33,8 +33,8 @@ sub new {
   $s->{keypad_on_pin}  = GPIO->new($config->param('PINOnPin'));
   $s->{keypad_off_pin} = GPIO->new($config->param('PINOffPin'));
 
-  $s->_transaction_new();
   $s->connectSerial();
+  $s->_transaction_new();
   $s->_create_pin_progress_meter_template();
   return $s;
 }
@@ -74,6 +74,8 @@ sub _transaction_new {
   $s->{keys_read_idx} = -1;
   $s->{last_key_press_s} = time();
   $s->{key_buffer} = '';
+
+  $s->_read(256); # flush the input buffer
 }
 
 sub _read { # Used to easily mock the serial read interface, to inject timeout behaviour here.
@@ -97,9 +99,9 @@ sub wait_for_key {
 
     if ($c eq "") {
       $logger->error("KeyPad::wait_for_key():> KeyPad is not on!") if $logger->is_trace();
-      $c = -1;
+      $c = "-1";
     }
-    elsif ($c != -1) {
+    elsif ($c ne "-1") {
       $logger->trace("KeyPad::wait_for_key():> Key received!") if $logger->is_trace();
       $s->_push_key($c);
       # last; # lst in do-while raises a warning :(
@@ -107,7 +109,7 @@ sub wait_for_key {
     else {
       Time::HiRes::sleep(0.1);
     }
-  } while ($c == -1);
+  } while ($c eq "-1");
   return $c;
 }
 

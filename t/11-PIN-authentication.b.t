@@ -262,9 +262,9 @@ sub haisuliRedemption {
         assert_cardCacheUsed => undef,
         assert_cardCacheFlushed => undef,
         pinCharInput => [
-            ['4', 100, $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW],
-            ['3', 100, $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW],
-            ['2', 100, $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW],
+            ['0', 100, $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW],
+            ['*', 100, $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW],
+            ['#', 100, $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW],
             ['1', 100, $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_DONE],
         ],
         assert_pinAuthStatus => SSAuthenticator::ERR_PINBAD,
@@ -287,7 +287,7 @@ sub haisuliRedemption {
                 response => t::Mocks::api_response_card_authz_ok(),
             },
             {   request => {
-                    password => '4321',
+                    password => '0*#1',
                 },
                 response => t::Mocks::api_response_pin_authn_bad(),
             },
