@@ -55,6 +55,8 @@ configure:
 
 	cp $(udevDir)/99-$(programName).rules /$(udevDir)/
 
+	cp boot/config.txt /boot/config.txt
+
 unconfigure:
 	rm -r /$(confDir) || $(RC)
 	rm -r /$(cacheDir)
