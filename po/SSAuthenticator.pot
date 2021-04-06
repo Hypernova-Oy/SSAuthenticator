@@ -1,6 +1,9 @@
 msgid "                    "
 msgstr ""
 
+msgid "       PIN OK       "
+msgstr ""
+
 msgid "     Age limit      "
 msgstr ""
 
@@ -14,6 +17,9 @@ msgid "    Barcode read    "
 msgstr ""
 
 msgid "    Please wait     "
+msgstr ""
+
+msgid "    Server error    "
 msgstr ""
 
 msgid "   Access denied    "
@@ -30,16 +36,22 @@ msgstr ""
 msgid "   Library closed   "
 msgstr ""
 
-msgid "   Network error    "
-msgstr ""
-
 msgid "   See you soon!    "
 msgstr ""
 
 msgid "   Welcome again!   "
 msgstr ""
 
+msgid "   Wrong PIN code   "
+msgstr ""
+
+msgid "   Wrong PIN code..."
+msgstr ""
+
 msgid "   Wrong borrower   \\n      category      "
+msgstr ""
+
+msgid "  Connection error  "
 msgstr ""
 
 msgid ""
@@ -47,10 +59,16 @@ msgid ""
 "everything I need. "
 msgstr ""
 
-msgid "  Unexpected error  "
+msgid "  Invalid PIN-code  "
+msgstr ""
+
+msgid "  Please enter PIN  "
 msgstr ""
 
 msgid " Circulation rules  \\n    not followed    "
+msgstr ""
+
+msgid " Device API failure \\n Bad authentication "
 msgstr ""
 
 msgid " Enjoy our library. "
@@ -100,8 +118,12 @@ msgstr ""
 msgid "Our place is great. "
 msgstr ""
 
+msgid "PIN entry timeouted "
+msgstr ""
+
 msgid "Please remember me! "
 msgstr ""
 
 msgid "Thanks for visiting."
 msgstr ""
+
