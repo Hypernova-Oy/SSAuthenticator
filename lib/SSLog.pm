@@ -26,7 +26,6 @@ sub AUTOLOAD {
     unless (blessed($l)) {
          longmess "SSLog invoked with an unblessed reference??";
     }
-    $DB::single=1;
     unless ($l->{_log}) {
         $l->{_log} = get_logger($l);
     }
