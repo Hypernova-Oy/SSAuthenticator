@@ -15,7 +15,7 @@ use SSAuthenticator::Config;
 use SSAuthenticator::Mailbox;
 use SSAuthenticator::Transaction;
 
-my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig);
+my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $askpin);
 my @params;
 
 GetOptions(
@@ -25,6 +25,7 @@ GetOptions(
     'p|params=s'                  => \@params,
     'b'                           => \$barcodeReader,
     'a|api=s'                     => \$apiTest,
+    'askpin=s'                    => \$askpin,
     'get-config'                  => \$getConfig,
 );
 
@@ -47,6 +48,7 @@ autoconfigured yet.
                             -1 less verbose
                             2  most verbose
   --get-config            Outputs all config in JSON to STDOUT
+  --askpin barcode        Ask for PIN via the keypad for the given barcode
 
 Mailbox-feature
 
@@ -76,6 +78,9 @@ EXAMPLES
 
     #Test API calls - Check PIN code
     ssauthenticator --api="pin:167A006007:1234"
+
+    #Test the physical keypad
+    ssauthenticator --askpin="167A000001"
 
 USAGE
 
@@ -113,6 +118,20 @@ elsif ($apiTest) {
 }
 elsif ($message) {
   SSAuthenticator::Mailbox::sendMessage($message, @params);
+}
+elsif ($askpin) {
+  $SSAuthenticator::keyPad = SSAuthenticator::Device::KeyPad::init(SSAuthenticator::config());
+  while (1) {
+    eval {
+      my $trans = SSAuthenticator::Transaction->new();
+      SSAuthenticator::checkPIN($trans, $askpin);
+      Data::Printer::p($trans);
+    };
+    if ($@) {
+      Data::Printer::p($@);
+    }
+    sleep(1);
+  }
 }
 else {
   SSAuthenticator->main();
