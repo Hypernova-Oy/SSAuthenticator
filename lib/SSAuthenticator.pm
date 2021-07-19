@@ -481,9 +481,9 @@ sub config {
 sub main {
     local $/ = SSAuthenticator::BarcodeReader::getBarcodeSeparator();
 
+    SSAuthenticator::I18n::setDefaultLanguage();
     SSAuthenticator::OLED::showInitializingMsg('STARTING'); sleep 2;
     eval {
-        SSAuthenticator::I18n::setDefaultLanguage();
         SSAuthenticator::BarcodeReader::configureBarcodeScanner();
         SSAuthenticator::Device::RGBLed::init(config());
         $keyPad = SSAuthenticator::Device::KeyPad::init(config()) if (config()->param('RequirePIN'));
