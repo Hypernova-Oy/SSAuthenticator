@@ -247,9 +247,9 @@ sub checkCard_tryCache {
 
 sub checkPIN {
     my ($trans, $cardnumber) = @_;
-    $keyPad->turnOn();
     $keyPad->_transaction_new();
     SSAuthenticator::OLED::showEnterPINMsg($trans);
+    $keyPad->turnOn();
     while(defined($keyPad->wait_for_key())) {
         $trans->pinLatestKeyStatus($keyPad->maybe_transaction_complete());
         if    ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW) {

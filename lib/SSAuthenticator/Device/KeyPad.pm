@@ -54,7 +54,9 @@ sub connectSerial {
 
   # These are unnecessary on Ubuntu 18.04
   $portObj->read_char_time(0);     # don't wait for each character
-  $portObj->read_const_time(1000); # 1 second per unfulfilled "read" call
+  # 10ms per unfulfilled "read" call. When asking for the PIN-code, this time is spent flushing the read buffer, before PIN-code can be received.
+  # 10ms is arbitrary, could be 0 too I guess. Seems to work fine with this. 1000 is too much since it artificially delays the init of the PIN-code session.
+  $portObj->read_const_time(10);
 
   $portObj->write_settings || die "write_settings failed: $!";
   $s->{dev} = $portObj;
