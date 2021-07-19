@@ -482,7 +482,7 @@ sub main {
     local $/ = SSAuthenticator::BarcodeReader::getBarcodeSeparator();
 
     SSAuthenticator::I18n::setDefaultLanguage();
-    SSAuthenticator::OLED::showInitializingMsg('STARTING'); sleep 2;
+    SSAuthenticator::OLED::showInitializingMsg('STARTING');
     eval {
         SSAuthenticator::BarcodeReader::configureBarcodeScanner();
         SSAuthenticator::Device::RGBLed::init(config());
