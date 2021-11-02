@@ -14,6 +14,7 @@ use SSAuthenticator;
 use SSAuthenticator::Config;
 use SSAuthenticator::Mailbox;
 use SSAuthenticator::Transaction;
+use SSAuthenticator::Util;
 
 my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $askpin);
 my @params;
@@ -105,11 +106,13 @@ elsif ($apiTest) {
   if ($apiTest =~ /^(card):([^:]+)/) {
     my $trans = SSAuthenticator::Transaction->new();
     SSAuthenticator::checkCardPermission($trans, $2);
+    print("Card authorization status: ".SSAuthenticator::Util::get_constant_name('SSAuthenticator', $trans->cardAuthz())."\n");
     Data::Printer::p($trans);
   }
   elsif ($apiTest =~ /^(pin):([^:]+):([^:]+)/) {
     my $trans = SSAuthenticator::Transaction->new();
     SSAuthenticator::checkPIN_tryPIN($trans, $2, $3);
+    print("PIN authentication status: ".SSAuthenticator::Util::get_constant_name('SSAuthenticator', $trans->pinAuthn())."\n");
     Data::Printer::p($trans);
   }
   else {
