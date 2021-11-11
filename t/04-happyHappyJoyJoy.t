@@ -11,7 +11,7 @@ use SSAuthenticator::Greetings;
 
 my $defaultConfTempFile = t::Examples::writeConf();
 SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
-SSAuthenticator::changeLanguage('en_GB', 'UTF-8');
+SSAuthenticator::I18n::changeLanguage('en_GB', 'UTF-8');
 
 
 subtest "Get greetings", \&getGreetings;

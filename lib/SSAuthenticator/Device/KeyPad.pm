@@ -99,7 +99,7 @@ sub wait_for_key {
       SSAuthenticator::Exception::KeyPad::WaitTimeout->throw();
     }
 
-    if ($c eq "") {
+    if (not(defined($c)) || $c eq "") {
       $logger->error("KeyPad::wait_for_key():> KeyPad is not on!") if $logger->is_trace();
       $c = "-1";
     }
