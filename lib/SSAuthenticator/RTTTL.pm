@@ -26,7 +26,12 @@ sub playZelda {
         return;
     }
 }
-
+sub maybePlayMelody {
+    if (SSAuthenticator::Config::doRandomMelody()) {
+        my $selector = SSAuthenticator::Config::getRandomMelodySelector();
+        system("rtttl-player --selector=\"$selector\" --random &");
+    }
+}
 =head2 playRTTTL
 
 Plays the given song.
@@ -37,7 +42,7 @@ Plays the given song.
 
 sub playRTTTL {
     my ($song, $timeout) = @_;
-    system("rtttl-player -o song-$song &"); # Due to fork causing havok with GPIO and & making it impossible to trace what actually happens to the rtttl-player, we can just hope everything worked ok.
+    system("rtttl-player --song \"$song\" &"); # Due to fork causing havok with GPIO and & making it impossible to trace what actually happens to the rtttl-player, we can just hope everything worked ok.
 }
 
 1;

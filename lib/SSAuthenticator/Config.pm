@@ -204,5 +204,12 @@ sub setDoorOpenDuration {
 sub getDoorOpenDuration {
     return getConfig()->param('DoorOpenDuration');
 }
+sub doRandomMelody {
+    return 1 if (int(rand(100)) < (getConfig()->param('RandomMelodyChance') || 1));
+    return 0;
+}
+sub getRandomMelodySelector {
+    return getConfig()->param('RandomMelodySelector') || '^Abba';
+}
 
 1;

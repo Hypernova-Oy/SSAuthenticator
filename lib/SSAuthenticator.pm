@@ -406,6 +406,8 @@ sub grantAccess {
     my $signalingTimeLeft = 2 - $doorOpenDuration; # Make the RGB LED displays for atleast one second.
     Time::HiRes::sleep($signalingTimeLeft) if ($signalingTimeLeft > 0);
     SSAuthenticator::Device::RGBLed::ledOff('green');
+
+    SSAuthenticator::RTTTL::maybePlayMelody();
 }
 
 sub denyAccess {
