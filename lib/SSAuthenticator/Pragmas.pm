@@ -29,7 +29,6 @@ sub import {
   Modern::Perl->import::into($target, '2018');
   utf8->import::into($target); #This file and all Strings within are utf8-encoded
   Carp::Always->import::into($target);
-  experimental->import::into($target, 'signatures');
   English->import::into($target);
   Try::Tiny->import::into($target);
 
