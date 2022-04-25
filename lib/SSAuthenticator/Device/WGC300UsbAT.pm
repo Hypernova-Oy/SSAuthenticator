@@ -9,15 +9,17 @@ use Time::HiRes;
 
 my $logger = bless({}, 'SSLog');
 
-my $reader; #We can have only one Reader, so far.
+our $reader; #We can have only one Reader, so far.
 sub new {
-  my ($class) = @_;
+  my ($class, $args) = @_;
   $reader = bless({}, $class) unless $reader;
+  $reader->{devicePath} = $args->{devicePath};
   return $reader;
 }
 
 sub init {
   my ($s, $portName) = @_;
+  $portName = $s->{devicePath} unless $portName;
 
   my $portObj = Device::SerialPort->new($portName, 0) || die "Can't open $portName: $!\n";
   $portObj->baudrate(9600); #115200
@@ -37,8 +39,20 @@ sub init {
   $s->{dev} = $portObj;
 }
 
+=head2 autorecoverFromError
+
+@throws die if failed
+
+=cut
+
+sub autorecoverFromError {
+  my ($s) = @_;
+  $s->init();
+}
+
 sub sendCommand {
   my ($s, $commandCode) = @_;
+  my ($countOut);
 
   my $command = SSAuthenticator::Device::WGC300UsbAT::Commands::getCommand($commandCode);
   my $codePointsInDecimal = $command->{codePoints};
@@ -47,8 +61,16 @@ sub sendCommand {
   my $str = join('', map {chr($_)} @$codePointsInDecimal);
   my $hexes = join(' ', map {sprintf("%02X", $_)} @$codePointsInDecimal);
   $logger->trace("Sending: '$str'");
+  print("Sending: '$str'");
+  print("$hexes\n");
 
-  my $countOut = $s->{dev}->write($str) or die "Unable to send message '$hexes': $!";
+  eval {
+    $countOut = $s->{dev}->write($str) or die "Unable to send message '$hexes': $!";
+  };
+  if ($@) {
+    $s->{_err} = $@;
+    die $@;
+  }
   $logger->trace("Wrote '$countOut' characters with message '$hexes'");
 
   $s->pollData(1);
@@ -84,9 +106,24 @@ sub pollData {
   return undef;
 }
 
+=head2 receiveData
+
+@throws "WGC300UsbAT: No connection to the device"
+@throws "WGC300UsbAT: Unknown error receiving data"
+
+=cut
+
 sub receiveData {
   my ($s) = @_;
-  my ($count, $data) = $s->{dev}->read(255);
+  my ($count, $data);
+  eval {
+    ($count, $data) = $s->{dev}->read(255) or die "$!";
+  };
+  if ($@) {
+    $s->{_err} = $@;
+    die "WGC300UsbAT: No connection to the device '$@'" if ($@ =~ /No such file or directory/);
+    die "WGC300UsbAT: Unknown error receiving data '$@'";
+  }
   return ($count, $data) unless ($count && $data);
 
   $data =~ s/(:?^\s+)|(:?\s+$)//g;
@@ -104,18 +141,20 @@ sub autoConfigure {
 
 sub close {
   my ($s) = @_;
+  return unless $s->{dev};
   $s->{dev}->close() || die "Failed to close: $!";
 }
 
 sub DESTROY {
   my ($s) = @_;
+  return unless $s;
   $s->close();
 }
 
 # Initialize the singleton
 unless ($reader) {
-  $reader = new(__PACKAGE__);
-  $reader->init("/dev/ttyWGC300USBAt");
+  $reader = new(__PACKAGE__, {devicePath => '/dev/ttyWGC300USBAt'});
+  $reader->init();
   #$reader->autoConfigure();
 }
 
