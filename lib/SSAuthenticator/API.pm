@@ -41,15 +41,32 @@ sub _makeSignature {
 }
 
 =head2 _prepareAuthenticationHeaders
-    @PARAM1 userid, the userid that we use to authenticate
-    @PARAM2 DateTime, OPTIONAL, the timestamp of the HTTP request
-    @PARAM3 HTTP verb, 'get', 'post', 'patch', 'put', ...
+
+    @PARAM1 DateTime, OPTIONAL, the timestamp of the HTTP request
+    @PARAM2 HTTP verb, 'get', 'post', 'patch', 'put', ...
     @RETURNS HASHRef of authentication HTTP header names and their values. {
     "X-Koha-Date" => "Mon, 26 Mar 2007 19:37:58 +0000",
     "Authorization" => "Koha admin69:frJIUN8DYpKDtOLCwo//yllqDzg=",
 }
+
 =cut
+
 sub _prepareAuthenticationHeaders {
+    my ($dateTime, $method) = @_;
+
+    my $conf = SSAuthenticator::Config::getConfig();
+    return _prepareBasicAuth() if $conf->param("ApiPassword");
+    return _prepareApiKeyAuth($dateTime, $method) if $conf->param("ApiKey");
+}
+
+sub _prepareBasicAuth {
+    my $conf = SSAuthenticator::Config::getConfig();
+    return [
+        'Authorization', 'Basic '.MIME::Base64::encode($conf->param("ApiUserName").':'.$conf->param("ApiPassword"), '')
+    ];
+}
+
+sub _prepareApiKeyAuth {
     my ($dateTime, $method) = @_;
 
     my $conf = SSAuthenticator::Config::getConfig();

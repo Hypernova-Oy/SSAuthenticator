@@ -84,7 +84,7 @@ sub _isConfigValid {
     my @pwuid = getpwuid($<);
 
     ##All mandatory params
-    my @params = ('ApiBaseUrl', 'ApiUserName', 'ApiKey',
+    my @params = ('ApiBaseUrl', 'ApiUserName',
                   'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'DoorOffPin',
                   'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
