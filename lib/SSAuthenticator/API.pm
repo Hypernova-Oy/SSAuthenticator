@@ -222,20 +222,17 @@ sub getPINResponse {
     my ($cardnumber, $pin) = @_;
 
     my $conf = SSAuthenticator::Config::getConfig();
-    my $requestUrl = $conf->param('ApiBaseUrl') . "/auth/session";
+    my $requestUrl = $conf->param('ApiBaseUrl') . "/selfservice/pincheck";
 
     my $ua = _getAPIClient();
 
-    my $body = "cardnumber=$cardnumber";
-    $body   .= "&password=".$pin;
+    my $body = "{'cardnumber': '$cardnumber', 'password': '$pin'}";
 
     my $headers = HTTP::Headers->new(
-        @{_prepareAuthenticationHeaders(undef, "POST")},
-        'Content-Type' => 'application/x-www-form-urlencoded',
-        'Content-Length' => length($body),
+        @{_prepareAuthenticationHeaders(undef, "GET")},
     );
 
-    my $request = HTTP::Request->new(POST => $requestUrl, $headers, $body);
+    my $request = HTTP::Request->new(GET => $requestUrl, $headers, $body);
 
     $lScraper->info($request->as_string);
     my $res = _do_api_request($ua => $request);
@@ -251,7 +248,7 @@ sub getPINResponse {
 
     my $body2 = _decodeContent($res);
     my $err = $body2->{error} || '';
-    my $permission = ($body2->{sessionid}) ? 1 : 0;
+    my $permission = ($body2->{permission}) ? 1 : 0;
     return ($res, $body2, $err, $permission, $res->code);
 }
 

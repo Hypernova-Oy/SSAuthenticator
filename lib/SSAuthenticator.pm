@@ -384,7 +384,7 @@ sub isAuthorizedApiPIN {
 
     my ($httpResponse, $body, $err, $permission, $status) = SSAuthenticator::API::getPINResponse($cardnumber, $pin);
 
-    if ($status eq 403) {
+    if ($status eq 401 || $status eq 403) {
         SSAuthenticator::API::isMalfunctioning($ERR_API_AUTH);
         return $ERR_API_AUTH;
     }
@@ -403,9 +403,6 @@ sub isAuthorizedApiPIN {
     }
     elsif ($status =~ /^2\d\d$/) {
         return $permission ? $OK : $ERR_PINBAD;
-    }
-    if ($status eq 401) {
-        return $ERR_PINBAD;
     }
 
     $l->error("isAuthorizedApiPIN() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response") if $l->is_error;

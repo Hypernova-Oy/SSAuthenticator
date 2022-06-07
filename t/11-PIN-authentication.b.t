@@ -20,6 +20,7 @@ use JSON;
 use t::Examples;
 use t::Mocks;
 use t::Mocks::HTTPResponses;
+use t::Mocks::OpeningHours;
 use t::Util qw(scenario);
 use SSAuthenticator;
 use SSAuthenticator::I18n;
@@ -56,6 +57,11 @@ sub haisuliRedemption {
     $ssAuthenticatorApiMockModule->mock('_do_api_request', \&t::Mocks::_do_api_request_check_against_list);
     $ssAuthenticatorKeyPadMockModule = Test::MockModule->new('SSAuthenticator::Device::KeyPad');
     $ssAuthenticatorKeyPadMockModule->mock('_read', \&t::Mocks::_keyPad_read_inputs);
+
+    # Configure cached opening hours to be always open. The cached opening hours are only used in the offline-mode.
+    # Otherwise we always check the newest opening information from Koha.
+    my $ohs = t::Mocks::OpeningHours::createAlwaysOpen();
+    ok(SSAuthenticator::OpeningHours::_persistOpeningHoursToDB($ohs), "Given the OpeningHours: Always open");
 
     scenario({
         name => "Haisuli tries to authenticate, but the server API authentication is broken, error not cached!",
@@ -406,6 +412,33 @@ sub haisuliRedemption {
                     password => '1234',
                 },
                 response => t::Mocks::api_response_pin_authn_ok(),
+            },
+        ],
+    });
+
+    my $ohs = t::Mocks::OpeningHours::createAlwaysClosed();
+    ok(SSAuthenticator::OpeningHours::_persistOpeningHoursToDB($ohs), "Given the OpeningHours: Always closed");
+
+    scenario({
+        name => "Haisuli has proper card and enters PIN correctly, network is down, and the library is closed",
+        assert_authStatus => 0,
+        assert_authStatus => $SSAuthenticator::ERR_CLOSED,
+        assert_cardAuthStatus => $SSAuthenticator::OK,
+        assert_cardCached => 0,
+        assert_cardCacheUsed => 1,
+        assert_oledMsgs => [
+            [showEnterPINMsg    => 'Please enter PIN'],
+            [showPINProgress    => '\*  I'],
+            [showPINProgress    => '\*\* I'],
+            [showPINProgress    => '\*\*\*I'],
+            [showPINProgress    => '\*\*\*\* '],
+            [showPINStatusOKPIN => 'PIN OK'],
+        ],
+        httpTransactions => [
+            {   request => {
+                    cardnumber => '167A006007',
+                },
+                response => { _no_connection => 1, },
             },
         ],
     });

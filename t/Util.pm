@@ -19,6 +19,8 @@ sub scenario {
     my $scen = shift;
     $t::Mocks::mock_httpTransactions_list = $scen->{httpTransactions};
     $t::Mocks::keyPad_read_inputs = $scen->{pinCharInput};
+    # When the keypad begins a new transaction, it flushes the input buffer. This removes the first element from the mocked pin-entry list. Adjust to input buffer flushing here.
+    unshift(@$t::Mocks::keyPad_read_inputs, [0,0,0]) if ($t::Mocks::keyPad_read_inputs);
 
     subtest $scen->{name}, sub {
         my $trans = SSAuthenticator::Transaction->new();

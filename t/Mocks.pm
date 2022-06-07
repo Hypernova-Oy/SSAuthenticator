@@ -207,19 +207,18 @@ sub api_response_pin_authn_ok {
         httpCode => 200,
         headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
         body     => JSON::encode_json({
-            sessionid => 'SESSIONID1234',
-            permissions => {},
-            borrowernumber => 10,
+            permission => 1,
         }),
     };
 }
 
 sub api_response_pin_authn_bad {
     return {
-        httpCode => 401,
+        httpCode => 200,
         headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
         body     => JSON::encode_json({
-            error => "Login failed.",
+            permission => 0,
+            error => "Wrong password.",
         }),
     };
 }
