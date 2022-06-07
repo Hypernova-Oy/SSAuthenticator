@@ -26,8 +26,8 @@ sub showAccessMsg {
     no warnings 'uninitialized';
     push(@msg, split(/\\n/, __($i18nMsg->{'ACCESS_DENIED'}))) if (not($trans->auth));
     push(@msg, split(/\\n/, __($i18nMsg->{$trans->pinAuthn || $trans->cardAuthz})));
-    push(@msg, split(/\\n/, __($i18nMsg->{'OPEN_AT'}).' '.SSAuthenticator::SharedState::get('openingTime').'-'.SSAuthenticator::SharedState::get('closingTime'))) if $trans->cardAuthz == SSAuthenticator::ERR_CLOSED;
-    push(@msg, split(/\\n/, __($i18nMsg->{'CONTACT_LIBRARY'}))) if (not($trans->auth) && $trans->pinAuthn != SSAuthenticator::ERR_PINTIMEOUT && $trans->pinAuthn != SSAuthenticator::ERR_PINBAD);
+    push(@msg, split(/\\n/, __($i18nMsg->{'OPEN_AT'}).' '.SSAuthenticator::SharedState::get('openingTime').'-'.SSAuthenticator::SharedState::get('closingTime'))) if $trans->cardAuthz == $SSAuthenticator::ERR_CLOSED;
+    push(@msg, split(/\\n/, __($i18nMsg->{'CONTACT_LIBRARY'}))) if (not($trans->auth) && $trans->pinAuthn != $SSAuthenticator::ERR_PINTIMEOUT && $trans->pinAuthn != $SSAuthenticator::ERR_PINBAD);
     push(@msg, split(/\\n/, __($i18nMsg->{'CACHE_USED'}))) if ($trans->cardAuthzCacheUsed || $trans->pinAuthnCacheUsed);
 
     if ($trans->auth > 0) { #Only print a happy-happy-joy-joy message on success ;)

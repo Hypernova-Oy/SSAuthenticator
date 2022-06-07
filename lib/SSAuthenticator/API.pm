@@ -261,4 +261,31 @@ sub isMalfunctioning {
     return $isMalfunctioning;
 }
 
+sub getOpeningHours {
+    my $conf = SSAuthenticator::Config::getConfig();
+
+    my $requestUrl = $conf->param('ApiBaseUrl') . "/selfservice/openinghours/self";
+    my $headers = HTTP::Headers->new(
+        @{_prepareAuthenticationHeaders(undef, "GET")},
+    );
+    my $ua = _getAPIClient();
+
+    my $request = HTTP::Request->new(GET => $requestUrl, $headers);
+    $lScraper->debug($request->as_string);
+    my $res = _do_api_request($ua => $request);
+    $lScraper->debug($res->as_string);
+
+    unless ($res) {
+        die "getOpeningHours() didn't get a proper Response object?";
+    }
+
+    if ($res->header('Client-Warning') && $res->header('Client-Warning') eq 'Internal response') { #Internal LWP::UserAgent error
+        return _handleInternalLWPClientError($res);
+    }
+
+    my $body = _decodeContent($res);
+    my $err = (ref($body) eq 'HASH') ? $body->{error} : '';
+    return ($res, $body, $err, $res->code);
+}
+
 1;

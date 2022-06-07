@@ -12,22 +12,34 @@ our $VERSION = "0.13";
 #Statuses > 0 are success statuses
 #Statuses between -1 and -99 are user failure statuses
 #statuses <= -100 are software issues
-use constant {
-    OK                => 1,
-    ERR_UNDERAGE      => -1, #if below the allowed age for the given branch
-    ERR_SSTAC         => -2, #if Self-service terms and conditions are not accepted
-    ERR_BBC           => -3, #if BorrowerCategory is not accepted;
-    ERR_REVOKED       => -4, #if self-service permission has been revoked for this user
-    ERR_NAUGHTY       => -5, #if the authorizing user has fines or debarments
-    ERR_CLOSED        => -6, #if the library's self-service time is over for the day
-    ERR_BADCARD       => -7, #if user's cardnumber is not know
-    ERR_PINTIMEOUT    => -9,   #User took too long to enter the PIN code
-    ERR_PINBAD        => -10,  #User entered a wrong PIN number
-    ERR_SERVER        => -100, #Server error, probably API Broken or misconfigured from the server side
-    ERR_API_AUTH      => -101, #API auth error
-    ERR_SERVERCONN    => -102, #Server has connection issues
+our $OK;
+our $ERR_UNDERAGE;
+our $ERR_SSTAC;
+our $ERR_BBC;
+our $ERR_REVOKED;
+our $ERR_NAUGHTY;
+our $ERR_CLOSED;
+our $ERR_BADCARD;
+our $ERR_PINTIMEOUT;
+our $ERR_PINBAD;
+our $ERR_SERVER;
+our $ERR_API_AUTH;
+our $ERR_SERVERCONN;
+BEGIN {
+$OK                = 1;
+$ERR_UNDERAGE      = -1;   #if below the allowed age for the given branch
+$ERR_SSTAC         = -2;   #if Self-service terms and conditions are not accepted
+$ERR_BBC           = -3;   #if BorrowerCategory is not accepted;
+$ERR_REVOKED       = -4;   #if self-service permission has been revoked for this user
+$ERR_NAUGHTY       = -5;   #if the authorizing user has fines or debarments
+$ERR_CLOSED        = -6;   #if the library's self-service time is over for the day
+$ERR_BADCARD       = -7;   #if user's cardnumber is not know
+$ERR_PINTIMEOUT    = -9;   #User took too long to enter the PIN code
+$ERR_PINBAD        = -10;  #User entered a wrong PIN number
+$ERR_SERVER        = -100; #Server error, probably API Broken or misconfigured from the server side
+$ERR_API_AUTH      = -101; #API auth error
+$ERR_SERVERCONN    = -102; #Server has connection issues
 };
-
 
 =encoding utf8
 
@@ -64,6 +76,7 @@ use SSAuthenticator::I18n qw($i18nMsg);
 use SSAuthenticator::Lock;
 use SSAuthenticator::Mailbox;
 use SSAuthenticator::OLED;
+use SSAuthenticator::OpeningHours;
 use SSAuthenticator::Password;
 use SSAuthenticator::RTTTL;
 use SSAuthenticator::SharedState;
@@ -102,7 +115,7 @@ sub isAuthorized {
             checkPIN($trans, $cardnumber);
         } catch {
             if (blessed($_) && $_->isa('SSAuthenticator::Exception::KeyPad::WaitTimeout')) {
-                $trans->pinAuthn(ERR_PINTIMEOUT);
+                $trans->pinAuthn($ERR_PINTIMEOUT);
                 $keyPad->turnOff();
             }
             elsif (blessed($_)) { $_->rethrow(); }
@@ -148,19 +161,19 @@ sub checkCardPermission {
         $trans->cardAuthz(isAuthorizedApi($cardnumber));
     } catch {
         $l->fatal("isAuthorizedApi() died with error:\n".$l->flatten($_));
-        $trans->cardAuthz(ERR_SERVER);
+        $trans->cardAuthz($ERR_SERVER);
     };
     $l->info("isAuthorizedApi() returns ".($trans->cardAuthz || ''));
 
     # Check if we got response from REST API
-    if ($trans->cardAuthz != ERR_SERVER && $trans->cardAuthz != ERR_SERVERCONN && $trans->cardAuthz != ERR_API_AUTH) {
+    if ($trans->cardAuthz != $ERR_SERVER && $trans->cardAuthz != $ERR_SERVERCONN && $trans->cardAuthz != $ERR_API_AUTH) {
         #Don't extend cache duration if there is a cache hit. Original date of checking is important
         if (not($trans->cardAuthzCacheUsed) &&
-            $trans->cardAuthz != ERR_BADCARD &&
-            $trans->cardAuthz != ERR_SERVER &&
-            $trans->cardAuthz != ERR_SERVERCONN &&
-            $trans->cardAuthz != ERR_API_AUTH &&
-            $trans->cardAuthz != ERR_CLOSED) {
+            $trans->cardAuthz != $ERR_BADCARD &&
+            $trans->cardAuthz != $ERR_SERVER &&
+            $trans->cardAuthz != $ERR_SERVERCONN &&
+            $trans->cardAuthz != $ERR_API_AUTH &&
+            $trans->cardAuthz != $ERR_CLOSED) {
             updateCache($trans, $cardnumber, $trans->cardAuthz);
         }
         return $trans;
@@ -188,51 +201,62 @@ sub isAuthorizedApi {
     my ($httpResponse, $body, $err, $permission, $status) = SSAuthenticator::API::getApiResponse($cardnumber);
 
     if ($status eq 401 || $status eq 403) {
-        SSAuthenticator::API::isMalfunctioning(ERR_API_AUTH);
-        return ERR_API_AUTH;
+        SSAuthenticator::API::isMalfunctioning($ERR_API_AUTH);
+        return $ERR_API_AUTH;
     }
     elsif ($status eq 404 && $httpResponse->header('Content-Type') =~ /text.html/) {
-        SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
-        return ERR_SERVER;
+        SSAuthenticator::API::isMalfunctioning($ERR_SERVER);
+        return $ERR_SERVER;
     }
     elsif ($status eq 404) {
-        return ERR_BADCARD;
+        return $ERR_BADCARD;
     }
     elsif ($status =~ /^510/) { #Statuses starting with 510, LWP::UserAgent connectivity issues
         $l->error("isAuthorizedApi($cardnumber) REST API cannot connect to server. Error:\n".$httpResponse->as_string) if $l->is_error;
-        SSAuthenticator::API::isMalfunctioning(ERR_SERVERCONN);
-        return ERR_SERVERCONN;
+        SSAuthenticator::API::isMalfunctioning($ERR_SERVERCONN);
+        return $ERR_SERVERCONN;
     }
     elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
         $l->error("isAuthorizedApi($cardnumber) REST API returns server error:\n".$httpResponse->as_string) if $l->is_error;
-        SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
-        return ERR_SERVER;
+        SSAuthenticator::API::isMalfunctioning($ERR_SERVER);
+        return $ERR_SERVER;
     }
     elsif ($status eq 200 && $err) {
-        return ERR_UNDERAGE if $err eq 'Koha::Exception::SelfService::Underage';
-        return ERR_SSTAC    if $err eq 'Koha::Exception::SelfService::TACNotAccepted';
-        return ERR_BBC      if $err eq 'Koha::Exception::SelfService::BlockedBorrowerCategory';
-        return ERR_REVOKED  if $err eq 'Koha::Exception::SelfService::PermissionRevoked';
-        if ($err eq 'Koha::Exception::SelfService::OpeningHours') {
+        return $ERR_UNDERAGE if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::Underage';
+        return $ERR_SSTAC    if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::TACNotAccepted';
+        return $ERR_BBC      if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::BlockedBorrowerCategory';
+        return $ERR_REVOKED  if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::PermissionRevoked';
+        if ($err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::OpeningHours') {
             SSAuthenticator::SharedState::set('openingTime', $body->{startTime});
             SSAuthenticator::SharedState::set('closingTime', $body->{endTime});
-            return ERR_CLOSED;
+            return $ERR_CLOSED;
         }
-        return ERR_NAUGHTY  if $err eq 'Koha::Exception::SelfService';
-        return ERR_SERVER;
+        return $ERR_NAUGHTY  if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception';
+        return $ERR_SERVER;
     }
     elsif ($status eq 200 && $permission) {
-        return $permission ? OK : ERR_SERVER;
+        return $permission ? $OK : $ERR_SERVER;
     }
 
     $l->error("isAuthorizedApi() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response") if $l->is_error;
-    SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
-    return ERR_SERVER; #For some reason server doesn't respond. Fall back to using cache.
+    SSAuthenticator::API::isMalfunctioning($ERR_SERVER);
+    return $ERR_SERVER; #For some reason server doesn't respond. Fall back to using cache.
 }
 
 # returns 1 on cache hit
 sub checkCard_tryCache {
     my ($trans, $cardnumber) = @_;
+
+    my $oh = SSAuthenticator::OpeningHours::loadOpeningHoursFromDB();
+    unless ($oh->isOpen()) {
+        $trans->cardAuthz($SSAuthenticator::ERR_CLOSED);
+        $trans->cardAuthzCacheUsed(1);
+        SSAuthenticator::SharedState::set('openingTime', $oh->start);
+        SSAuthenticator::SharedState::set('closingTime', $oh->end);
+        $l->info("checkCard_tryCache($cardnumber) cache hit auth='".($trans->cardAuthz || '')."'");
+        return 1;
+    }
+
     if (my $cache = db()->{$cardnumber}) {
         if ($cache->{access}) {
             $trans->cardAuthz($cache->{access});
@@ -241,6 +265,7 @@ sub checkCard_tryCache {
             return 1;
         }
     }
+
     $trans->cardAuthzCacheUsed(0);
     return 0;
 }
@@ -309,16 +334,16 @@ sub checkPIN_tryPIN {
         $trans->pinAuthn(isAuthorizedApiPIN($cardnumber, $pin));
     } catch {
         $l->fatal("isAuthorizedApiPIN() died with error:\n".$l->flatten($_));
-        $trans->pinAuthn(ERR_SERVER);
+        $trans->pinAuthn($ERR_SERVER);
     };
     $l->info("isAuthorizedApiPIN() returns ".($trans->pinAuthn || ''));
 
     # Check if we got response from REST API
-    if ($trans->pinAuthn == OK) {
+    if ($trans->pinAuthn == $OK) {
         updateCache($trans, $cardnumber, undef, $pin);
         return;
     }
-    elsif ($trans->pinAuthn == ERR_PINBAD || $trans->pinAuthn == ERR_PINTIMEOUT) {
+    elsif ($trans->pinAuthn == $ERR_PINBAD || $trans->pinAuthn == $ERR_PINTIMEOUT) {
         return;
     }
     else {
@@ -332,7 +357,7 @@ sub checkPIN_tryCache {
     my ($trans, $cardnumber, $pin) = @_;
     if (my $cache = db()->{$cardnumber}) {
         if ($cache->{pin}) {
-            $trans->pinAuthn((SSAuthenticator::Password::check_password($cardnumber, $pin, $cache->{pin})) ? OK : ERR_PINBAD);
+            $trans->pinAuthn((SSAuthenticator::Password::check_password($cardnumber, $pin, $cache->{pin})) ? $OK : $ERR_PINBAD);
             $trans->pinAuthnCacheUsed(1);
             $l->info("checkPIN_tryCache($cardnumber) cache hit auth='".($trans->pinAuthn || '')."'");
             return 1;
@@ -360,32 +385,32 @@ sub isAuthorizedApiPIN {
     my ($httpResponse, $body, $err, $permission, $status) = SSAuthenticator::API::getPINResponse($cardnumber, $pin);
 
     if ($status eq 403) {
-        SSAuthenticator::API::isMalfunctioning(ERR_API_AUTH);
-        return ERR_API_AUTH;
+        SSAuthenticator::API::isMalfunctioning($ERR_API_AUTH);
+        return $ERR_API_AUTH;
     }
     elsif ($status eq 404) {
-        return ERR_BADCARD;
+        return $ERR_BADCARD;
     }
     elsif ($status =~ /^510/) { #Statuses starting with 510, LWP::UserAgent connectivity issues
         $l->error("isAuthorizedApiPIN($cardnumber) REST API cannot connect to server. Error:\n".$httpResponse->as_string) if $l->is_error;
-        SSAuthenticator::API::isMalfunctioning(ERR_SERVERCONN);
-        return ERR_SERVERCONN;
+        SSAuthenticator::API::isMalfunctioning($ERR_SERVERCONN);
+        return $ERR_SERVERCONN;
     }
     elsif ($status =~ /^5\d\d/) { #Statuses starting with 5, aka. Server errors.
         $l->error("isAuthorizedApiPIN($cardnumber) REST API returns server error:\n".$httpResponse->as_string) if $l->is_error;
-        SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
-        return ERR_SERVER;
+        SSAuthenticator::API::isMalfunctioning($ERR_SERVER);
+        return $ERR_SERVER;
     }
     elsif ($status =~ /^2\d\d$/) {
-        return $permission ? OK : ERR_PINBAD;
+        return $permission ? $OK : $ERR_PINBAD;
     }
     if ($status eq 401) {
-        return ERR_PINBAD;
+        return $ERR_PINBAD;
     }
 
     $l->error("isAuthorizedApiPIN() REST API is not working as expected. Got this HTTP response:\n".Data::Dumper::Dumper($httpResponse)."\nEO HTTP Response") if $l->is_error;
-    SSAuthenticator::API::isMalfunctioning(ERR_SERVER);
-    return ERR_SERVER; #For some reason server doesn't respond. Fall back to using cache.
+    SSAuthenticator::API::isMalfunctioning($ERR_SERVER);
+    return $ERR_SERVER; #For some reason server doesn't respond. Fall back to using cache.
 }
 
 sub grantAccess {

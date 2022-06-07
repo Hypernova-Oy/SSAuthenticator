@@ -88,6 +88,7 @@ sub _isConfigValid {
                   'RedLEDPin', 'BlueLEDPin', 'GreenLEDPin', 'DoorPin', 'DoorOffPin',
                   'Verbose', 'RandomGreetingChance',
                   'DefaultLanguage', 'MailboxDir', 'Log4perlConfig',
+                  'OpeningHoursDBFile',
                   'ConnectionTimeout', 'DoorOpenDuration',
                   'OLED_ShowCardNumberWhenRead', 'BarcodeReaderModel',
                   'DoubleReadTimeout', 'Code39DecodingLevel', 'RequirePIN', 'PINLength', 'PINTimeout', 'PINOnPin', 'PINOffPin');

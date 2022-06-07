@@ -167,4 +167,18 @@ Connection timed out at /usr/local/share/perl/5.28.1/LWP/Protocol/http.pm line 5
 RESPONSE
 }
 
+sub OpeningHours200 {
+    return <<RESPONSE;
+HTTP/1.1 200 OK
+Connection: close
+Date: Tue, 07 Jun 2022 02:22:33 GMT
+Server: Apache/2.4.41 (Ubuntu)
+Vary: User-Agent
+Content-Length: 127
+Content-Type: application/json;charset=UTF-8
+
+[["06:47","11:47"],["06:47","11:47"],["06:47","11:47"],["06:47","11:47"],["06:47","11:47"],["06:47","11:47"],["06:47","11:47"]]
+RESPONSE
+}
+
 1;

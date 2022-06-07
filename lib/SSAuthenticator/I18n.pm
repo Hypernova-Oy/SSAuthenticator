@@ -16,20 +16,20 @@ use SSAuthenticator::Config;
 our %i18nMsg = (
                             #-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++\n-----+++++-----+++++
     ##ACCESS MESSAGES
-    SSAuthenticator::OK           , N__"   Access granted   ", # '=>' quotes the key automatically, use ',' to not quote the constants to strings
+    $SSAuthenticator::OK           , N__"   Access granted   ", # '=>' quotes the key automatically, use ',' to not quote the constants to strings
     'ACCESS_DENIED'              => N__"   Access denied    ",
-    SSAuthenticator::ERR_API_AUTH , N__" Device API failure \\n Bad authentication ",
-    SSAuthenticator::ERR_UNDERAGE , N__"     Age limit      ",
-    SSAuthenticator::ERR_SSTAC    , N__" Terms & Conditions \\n    not accepted    ",
-    SSAuthenticator::ERR_BBC      , N__"   Wrong borrower   \\n      category      ",
-    SSAuthenticator::ERR_REVOKED  , N__" Self-service usage \\n permission revoked ",
-    SSAuthenticator::ERR_NAUGHTY  , N__" Circulation rules  \\n    not followed    ",
-    SSAuthenticator::ERR_CLOSED   , N__"   Library closed   ",
-    SSAuthenticator::ERR_BADCARD  , N__"Card not recognized ",
-    SSAuthenticator::ERR_PINBAD   , N__"  Invalid PIN-code  ",
-    SSAuthenticator::ERR_PINTIMEOUT,N__"PIN entry timeouted ",
-    SSAuthenticator::ERR_SERVER   , N__"    Server error    ",
-    SSAuthenticator::ERR_SERVERCONN,N__"  Connection error  ",
+    $SSAuthenticator::ERR_API_AUTH , N__" Device API failure \\n Bad authentication ",
+    $SSAuthenticator::ERR_UNDERAGE , N__"     Age limit      ",
+    $SSAuthenticator::ERR_SSTAC    , N__" Terms & Conditions \\n    not accepted    ",
+    $SSAuthenticator::ERR_BBC      , N__"   Wrong borrower   \\n      category      ",
+    $SSAuthenticator::ERR_REVOKED  , N__" Self-service usage \\n permission revoked ",
+    $SSAuthenticator::ERR_NAUGHTY  , N__" Circulation rules  \\n    not followed    ",
+    $SSAuthenticator::ERR_CLOSED   , N__"   Library closed   ",
+    $SSAuthenticator::ERR_BADCARD  , N__"Card not recognized ",
+    $SSAuthenticator::ERR_PINBAD   , N__"  Invalid PIN-code  ",
+    $SSAuthenticator::ERR_PINTIMEOUT,N__"PIN entry timeouted ",
+    $SSAuthenticator::ERR_SERVER   , N__"    Server error    ",
+    $SSAuthenticator::ERR_SERVERCONN,N__"  Connection error  ",
     'CACHE_USED'                 => N__" I Remembered you!  ",
     'CONTACT_LIBRARY'            => N__"Contact your library",
     'OPEN_AT'                    => N__"Open at",

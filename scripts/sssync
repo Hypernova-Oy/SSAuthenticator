@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+
+# Copyright 2022 Hypernova Oy
+#
+
+use Modern::Perl;
+use Carp;
+use Data::Printer;
+use Getopt::Long qw(:config no_ignore_case);
+
+use SSAuthenticator;
+use SSAuthenticator::Config;
+use SSAuthenticator::Mailbox;
+use SSAuthenticator::OpeningHours;
+use SSAuthenticator::Transaction;
+use SSAuthenticator::Util;
+
+my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $askpin);
+my @params;
+
+GetOptions(
+    'h|help'                      => \$help,
+    'v|verbose=i'                 => \$verbose,
+    'm|message=s'                 => \$message,
+    'p|params=s'                  => \@params,
+    'b'                           => \$barcodeReader,
+    'a|api=s'                     => \$apiTest,
+    'askpin=s'                    => \$askpin,
+    'get-config'                  => \$getConfig,
+);
+
+$ENV{SSA_LOG_LEVEL} = $verbose if $verbose;
+
+my $usage = <<USAGE;
+
+SSSync - Synchronize stuff from Koha to Toveri
+
+Currently only opening hour information.
+This script needs to be crontabbed hourly, to poll Koha for changes.
+
+Persists polled data on disk for SSAuthenticator to use.
+
+  -h --help               HELP!
+  -v --verbose            Int, sets the verbosity level:
+                            -1 less verbose
+                            2  most verbose
+
+EXAMPLES
+
+    #Checks Koha for the new opening hours.
+    sssync
+
+USAGE
+
+if ($help) {
+  print $usage;
+  exit 0;
+}
+
+SSAuthenticator::OpeningHours::synchronize();

@@ -20,6 +20,7 @@ my $build = Module::Build->new(
         'DateTime::Format::HTTP' => undef,
         'DBM::Deep'          => undef,
         'Digest::SHA'        => undef,
+        'File::BackupCopy'   => undef,
         'HTTP::Request::Common' => undef,
         'JSON::XS'           => undef,
         'Locale::TextDomain' => 1.30, # Later versions don't work

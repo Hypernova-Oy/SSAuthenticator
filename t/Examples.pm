@@ -16,6 +16,7 @@ use SSAuthenticator::DB;
 
 my $tempConfFile;
 my $tempLog4perlFile;
+my $tempOpeningHoursDBFile;
 sub _writeTempConf {
     my ($content) = @_;
     $tempConfFile = File::Temp->new();
@@ -32,7 +33,9 @@ my $mailboxDir = File::Temp->newdir();
 sub _getDefaultConf {
     my $dir = $mailboxDir->dirname();
     setLog4perlConfig();
+    setOpeningHoursDBFile();
     my $log4perl = $tempLog4perlFile->filename();
+    my $openingHoursDBFile = $tempOpeningHoursDBFile->filename();
 
 #Pins in BCM numbering
     return <<CONF;
@@ -57,6 +60,7 @@ MailboxDir $dir
 DefaultLanguage en_US
 DoorOpenDuration 1000
 Log4perlConfig $log4perl
+OpeningHoursDBFile $openingHoursDBFile
 BarcodeReaderModel WGC300UsbAT
 
 ircserver irc.oftc.net
@@ -141,6 +145,16 @@ CONF
 
     $tempLog4perlFile = _writeTempConf($conf);
     return $tempLog4perlFile;
+}
+
+sub setOpeningHoursDBFile {
+    my $conf = <<CONF;
+---
+
+CONF
+
+    $tempOpeningHoursDBFile = _writeTempConf($conf);
+    return $tempOpeningHoursDBFile;
 }
 
 1;

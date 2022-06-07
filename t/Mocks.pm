@@ -127,6 +127,49 @@ sub doorOffTimed {
     return 1;
 }
 
+sub api_response_card_library_closed {
+    return {
+        httpCode => 200,
+        headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
+        body     => JSON::encode_json({
+            permission => 'false',
+            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::OpeningHours',
+            startTime => '12:00',
+            endTime => '23:00'
+        }),
+    };
+}
+
+sub api_response_feature_unavailable {
+    return {
+        httpCode => 501,
+        headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
+        body     => JSON::encode_json({
+            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::FeatureUnavailable',
+        }),
+    };
+}
+
+sub api_response_server_error {
+    return {
+        httpCode => 500,
+        headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
+        body     => JSON::encode_json({
+            error => 'Something went wrong, check the logs.',
+        }),
+    };
+}
+
+sub api_response_card_not_found {
+    return {
+        httpCode => 404,
+        headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
+        body     => JSON::encode_json({
+             error => 'Koha::Exceptions::Patron',
+        }),
+    };
+}
+
 sub api_response_card_authz_ok {
     return {
         httpCode => 200,
@@ -143,7 +186,18 @@ sub api_response_card_authz_bad {
         headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
         body     => JSON::encode_json({
             permission => 'false',
-            error => 'Koha::Exception::SelfService',
+            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception',
+        }),
+    };
+}
+
+sub api_response_card_bad_borrower_category {
+    return {
+        httpCode => 200,
+        headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
+        body     => JSON::encode_json({
+            permission => 'false',
+            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::BlockedBorrowerCategory',
         }),
     };
 }

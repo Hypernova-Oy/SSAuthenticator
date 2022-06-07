@@ -1,5 +1,6 @@
 programName=ssauthenticator
 confDir=etc/$(programName)
+crontabDir=etc/cron.d
 logDir=var/log/$(programName)
 systemdServiceDir=etc/systemd/system
 cacheDir=var/cache/$(programName)
@@ -47,6 +48,7 @@ configure:
 	cp --backup=numbered $(confDir)/log4perl.conf /$(confDir)/
 	cp --backup=numbered $(confDir)/daemon.conf /$(confDir)/
 	cp $(systemdServiceDir)/$(programName).service /$(systemdServiceDir)/$(programName).service
+	cp $(crontabDir)/sssync /$(crontabDir)/sssync
 
 	mkdir -p /$(cacheDir)
 	touch /$(cacheDir)/patron.db
@@ -61,6 +63,7 @@ unconfigure:
 	rm -r /$(confDir) || $(RC)
 	rm -r /$(cacheDir)
 	rm /$(udevDir)/99-$(programName).rules
+	rm /$(crontabDir)/sssync
 
 serviceEnable:
 	# Stop serial getty from listening for serial connections on the Raspberry serial console
