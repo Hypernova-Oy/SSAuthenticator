@@ -20,6 +20,7 @@ use JSON;
 
 use t::Examples;
 use t::Mocks;
+use t::Mocks::HTTPResponses;
 use t::Mocks::OpeningHours;
 use t::Util qw(scenario);
 use SSAuthenticator;
@@ -41,7 +42,7 @@ Behavioural test case where Haisuli gets different kinds of errors while he trie
 # This is a test suite used without the PIN-code
 subtest "Scenario: Haisuli tries to access a self-service resource, but has accumulated almost all possible penalties. Now he is trying to redeem himself.", \&haisuliRedemption;
 sub haisuliRedemption {
-    plan tests => 12;
+    plan tests => 13;
 
     t::Examples::createCacheDB();
     my $defaultConfTempFile = t::Examples::writeConf('RequirePIN 0');
@@ -222,6 +223,24 @@ sub haisuliRedemption {
         httpTransactions => [
             {   request => {},
                 response => t::Mocks::api_response_server_error(),
+            },
+        ],
+    });
+
+    scenario({
+        name => "Haisuli tries to access the Library, but the Librarians haven't enabled 'koha-plugin-self-service'.",
+        assert_authStatus => 1,
+        assert_cardAuthStatus => $SSAuthenticator::OK,
+        assert_cardCached => undef,
+        assert_cardCacheFlushed => undef,
+        assert_cardCacheUsed => 1,
+        assert_oledMsgs => [
+            [showBarcodePostReadMsg => 'Please wait'],
+            [showAccessMsg => 'Access granted.+I [Rr]emembered you!'],
+        ],
+        httpTransactions => [
+            {   request => {},
+                response => HTTP::Response->parse(t::Mocks::HTTPResponses::PageNotFound()),
             },
         ],
     });

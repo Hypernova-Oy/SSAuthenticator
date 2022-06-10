@@ -167,6 +167,56 @@ Connection timed out at /usr/local/share/perl/5.28.1/LWP/Protocol/http.pm line 5
 RESPONSE
 }
 
+sub PageNotFound {
+return <<RESPONSE;
+HTTP/1.1 404 Not Found
+Connection: close
+Date: Thu, 09 Jun 2022 15:49:30 GMT
+Server: Apache
+Vary: User-Agent
+Content-Length: 1113
+Content-Type: text/html;charset=UTF-8
+Client-Date: Thu, 09 Jun 2022 15:49:30 GMT
+Title: Page not found
+
+<!DOCTYPE html>
+<!-- Request ID: f72167f6 -->
+<html>
+<head>
+<title>Page not found</title>
+<style>
+a img {
+border: 0;
+}
+body {
+background-color: #caecf6;
+}
+#noraptor {
+left: 0%;
+position: fixed;
+top: 60%;
+}
+#notfound {
+background: url(/mojo/notfound.png);
+height: 62px;
+left: 50%;
+margin-left: -153px;
+margin-top: -31px;
+position:absolute;
+top: 50%;
+width: 306px;
+}
+</style>
+</head>
+<body>
+<a href="https://lumme.koha-suomi.fi/">
+<img alt="Bye!" id="noraptor" src="/mojo/noraptor.png">
+</a>    <div id="notfound"></div>
+</body>
+</html>
+RESPONSE
+}
+
 sub OpeningHours200 {
     return <<RESPONSE;
 HTTP/1.1 200 OK

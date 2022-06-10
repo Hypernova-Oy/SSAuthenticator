@@ -76,7 +76,7 @@ sub testAPIResponseHandling {
         is($body->{errors}->[0]->{path}, '/password',   'Body ok');
         is($status,       400,           'Status 400');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApi($cardNumber), SSAuthenticator::ERR_SERVER);
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::ERR_SERVER);
     };
     subtest "SSStatus 401 unauthenticated", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::SSStatus401Unauthenticated)});
@@ -84,7 +84,7 @@ sub testAPIResponseHandling {
         like($body->{error}, qr/Cannot find/, 'Body ok');
         is($status,       401,           'Status 401');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApi($cardNumber), SSAuthenticator::ERR_API_AUTH);
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::ERR_API_AUTH);
     };
     subtest "SSStatus 401 unauthenticated", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::SSStatus404PageNotFound)});
@@ -92,7 +92,7 @@ sub testAPIResponseHandling {
         like($response->content, qr/title/, 'Body ok');
         is($status,       404,           'Status 404');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApi($cardNumber), SSAuthenticator::ERR_SERVER);
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::ERR_SERVER);
     };
     subtest "SSStatus 200 OK", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::SSStatus200True)});
@@ -100,7 +100,7 @@ sub testAPIResponseHandling {
         is($body->{permission}, 1,       'Body ok');
         is($status,       200,           'Status 200');
         is($permission,   1,             'Permission granted');
-        is(SSAuthenticator::isAuthorizedApi($cardNumber), SSAuthenticator::OK);
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::OK);
     };
     subtest "SSStatus 200 False", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::SSStatus200False)});
@@ -108,7 +108,7 @@ sub testAPIResponseHandling {
         is($body->{permission}, 0,       'Body ok');
         is($status,       200,           'Status 200');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApi($cardNumber), SSAuthenticator::ERR_NAUGHTY);
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::ERR_NAUGHTY);
     };
     subtest "PIN auth 201", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::AuthPin201OK)});
@@ -116,15 +116,15 @@ sub testAPIResponseHandling {
         is($body->{sessionid}, '5880',   'Body ok');
         is($status,       201,           'Status 200');
         is($permission,   1,             'Permission granted');
-        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), SSAuthenticator::OK);
+        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), $SSAuthenticator::OK);
     };
     subtest "PIN auth 401", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::AuthPin201Wrong)});
         my ($response, $body, $err, $permission, $status) = SSAuthenticator::API::getPINResponse($cardNumber, '1234');
         is($body->{error}, 'Login failed.', 'Body ok');
         is($status,       401,           'Status 200');
-        is($permission,   0,             'Permission granted');
-        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), SSAuthenticator::ERR_PINBAD);
+        is($permission,   0,             'Permission denied');
+        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), $SSAuthenticator::ERR_PINBAD);
     };
     subtest "ClientWarningConnectionRefused card endpoint", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::ClientWarningConnectionRefused)});
@@ -132,7 +132,7 @@ sub testAPIResponseHandling {
         like($body, qr/Connection refused/, 'Body ok');
         is($status,       510,           'Status 510');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApi($cardNumber), SSAuthenticator::ERR_SERVERCONN);
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::ERR_SERVERCONN);
     };
     subtest "ClientWarningConnectionTimeout card endpoint", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::ClientWarningConnectionTimeout)});
@@ -140,7 +140,7 @@ sub testAPIResponseHandling {
         like($body, qr/Connection timed out/, 'Body ok');
         is($status,       510,           'Status 510');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApi($cardNumber), SSAuthenticator::ERR_SERVERCONN);
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::ERR_SERVERCONN);
     };
     subtest "ClientWarningConnectionRefused PIN endpoint", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::ClientWarningConnectionRefused)});
@@ -148,7 +148,7 @@ sub testAPIResponseHandling {
         like($body, qr/Connection refused/, 'Body ok');
         is($status,       510,           'Status 510');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), SSAuthenticator::ERR_SERVERCONN);
+        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), $SSAuthenticator::ERR_SERVERCONN);
     };
     subtest "ClientWarningConnectionTimeout PIN endpoint", sub {
         $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::ClientWarningConnectionTimeout)});
@@ -156,7 +156,15 @@ sub testAPIResponseHandling {
         like($body, qr/Connection timed out/, 'Body ok');
         is($status,       510,           'Status 510');
         is($permission,   0,             'Permission denied');
-        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), SSAuthenticator::ERR_SERVERCONN);
+        is(SSAuthenticator::isAuthorizedApiPIN($cardNumber, '1234'), $SSAuthenticator::ERR_SERVERCONN);
+    };
+    subtest "PageNotFound card endpoint", sub {
+        $t::Mocks::mock_httpTransactions_list = _d({response => HTTP::Response->parse(t::Mocks::HTTPResponses::PageNotFound)});
+        my ($response, $body, $err, $permission, $status) = SSAuthenticator::API::getApiResponse($cardNumber);
+        is($body,         '',                    'Body empty');
+        is($status,       404,                   'Status 404');
+        is($permission,   0,                     'Permission denied');
+        is(SSAuthenticator::isAuthorizedApi($cardNumber), $SSAuthenticator::ERR_SERVER);
     };
 }
 
