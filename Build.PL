@@ -28,10 +28,12 @@ my $build = Module::Build->new(
         'LWP::UserAgent'     => undef,
         'Modern::Perl'       => undef,
         'POSIX'              => undef,
+        'Struct::Diff'       => undef,
         'Sys::SigAction'     => undef,
         'Test::More'         => undef,
         'Test::MockModule'   => undef,
         'Try::Tiny'          => undef,
+        'YAML::XS'           => undef,
     },
 );
 
