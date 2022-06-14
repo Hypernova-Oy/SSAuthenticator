@@ -226,7 +226,7 @@ sub getPINResponse {
 
     my $ua = _getAPIClient();
 
-    my $body = "{'cardnumber': '$cardnumber', 'password': '$pin'}";
+    my $body = "{\"cardnumber\": \"$cardnumber\", \"password\": \"$pin\"}";
 
     my $headers = HTTP::Headers->new(
         @{_prepareAuthenticationHeaders(undef, "GET")},
