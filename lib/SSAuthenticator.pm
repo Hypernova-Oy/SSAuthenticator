@@ -222,16 +222,16 @@ sub isAuthorizedApi {
         return $ERR_SERVER;
     }
     elsif ($status eq 200 && $err) {
-        return $ERR_UNDERAGE if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::Underage';
-        return $ERR_SSTAC    if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::TACNotAccepted';
-        return $ERR_BBC      if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::BlockedBorrowerCategory';
-        return $ERR_REVOKED  if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::PermissionRevoked';
-        if ($err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::OpeningHours') {
+        return $ERR_UNDERAGE if $err eq 'Koha::Exception::SelfService::Underage';
+        return $ERR_SSTAC    if $err eq 'Koha::Exception::SelfService::TACNotAccepted';
+        return $ERR_BBC      if $err eq 'Koha::Exception::SelfService::BlockedBorrowerCategory';
+        return $ERR_REVOKED  if $err eq 'Koha::Exception::SelfService::PermissionRevoked';
+        if ($err eq 'Koha::Exception::SelfService::OpeningHours') {
             SSAuthenticator::SharedState::set('openingTime', $body->{startTime});
             SSAuthenticator::SharedState::set('closingTime', $body->{endTime});
             return $ERR_CLOSED;
         }
-        return $ERR_NAUGHTY  if $err eq 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception';
+        return $ERR_NAUGHTY  if $err eq 'Koha::Exception::SelfService';
         return $ERR_SERVER;
     }
     elsif ($status eq 200 && $permission) {

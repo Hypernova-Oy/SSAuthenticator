@@ -133,7 +133,7 @@ sub api_response_card_library_closed {
         headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
         body     => JSON::encode_json({
             permission => 'false',
-            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::OpeningHours',
+            error => 'Koha::Exception::SelfService::OpeningHours',
             startTime => '12:00',
             endTime => '23:00'
         }),
@@ -145,7 +145,7 @@ sub api_response_feature_unavailable {
         httpCode => 501,
         headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
         body     => JSON::encode_json({
-            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::FeatureUnavailable',
+            error => 'Koha::Exception::SelfService::FeatureUnavailable',
         }),
     };
 }
@@ -186,7 +186,7 @@ sub api_response_card_authz_bad {
         headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
         body     => JSON::encode_json({
             permission => 'false',
-            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception',
+            error => 'Koha::Exception::SelfService',
         }),
     };
 }
@@ -197,7 +197,7 @@ sub api_response_card_bad_borrower_category {
         headers  => ['Content-Type' => 'application/json;charset=UTF-8'],
         body     => JSON::encode_json({
             permission => 'false',
-            error => 'Koha::Plugin::Fi::KohaSuomi::SelfService::Exception::BlockedBorrowerCategory',
+            error => 'Koha::Exception::SelfService::BlockedBorrowerCategory',
         }),
     };
 }
