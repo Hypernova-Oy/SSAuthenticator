@@ -7,10 +7,21 @@ use Time::HiRes;
 
 use SSAuthenticator::Exception::KeyPad::WaitTimeout;
 
+use Exporter qw(import);
+
+our @EXPORT = qw(
+  $KEYPAD_TRANSACTION_OVERFLOW
+  $KEYPAD_TRANSACTION_UNDERFLOW
+  $KEYPAD_TRANSACTION_DONE
+  $KEYPAD_TRANSACTION_MAYBE_DONE
+  $KEYPAD_TRANSACTION_RESET
+);
+
 our $KEYPAD_TRANSACTION_OVERFLOW = 1;
 our $KEYPAD_TRANSACTION_UNDERFLOW = 2;
 our $KEYPAD_TRANSACTION_DONE = 3;
 our $KEYPAD_TRANSACTION_MAYBE_DONE = 4;
+our $KEYPAD_TRANSACTION_RESET = 5;
 
 my $logger = bless({}, 'SSLog');
 
@@ -28,7 +39,7 @@ sub new {
   my $s = bless({}, $class);
   $s->{key_buffer} = '';
   $s->{transaction_timeout_s} = $config->param('PINTimeout')/1000;
-  $s->{code_length_min} = $config->param('PINLength');
+  $s->{code_length_min} = $config->param('PINLengthMin') // $config->param('PINLength');
   $s->{code_length_max} = $config->param('PINLength');
   $s->{keypad_on_pin}  = GPIO->new($config->param('PINOnPin'));
   $s->{keypad_off_pin} = GPIO->new($config->param('PINOffPin'));
@@ -128,25 +139,40 @@ sub _push_key {
   my ($s, $c) = @_;
   $s->{keys_read_idx}++;
   $s->{key_buffer} .= $c;
+  $s->{last_key} = $c;
   $s->{last_key_press_s} = Time::HiRes::time();
   return $s;
 }
 
 sub maybe_transaction_complete {
   my ($s) = @_;
-  if ($s->{keys_read_idx} == $s->{code_length_max}) {
+  if ($s->{last_key} eq SSAuthenticator::Config::pinCodeEnterKey()) {
+    return $KEYPAD_TRANSACTION_DONE;
+  }
+  elsif ($s->{last_key} eq SSAuthenticator::Config::pinCodeResetKey()) {
+    $s->_transaction_new();
+    return $KEYPAD_TRANSACTION_RESET;
+  }
+  elsif ($s->{keys_read_idx} >= $s->{code_length_max}) {
     $s->_transaction_new();
     return $KEYPAD_TRANSACTION_OVERFLOW;
   }
   elsif ($s->{keys_read_idx} < $s->{code_length_min}-1) {
     return $KEYPAD_TRANSACTION_UNDERFLOW;
   }
-  elsif ($s->{code_length_min} == $s->{code_length_max} && $s->{keys_read_idx} == $s->{code_length_min}-1) {
+  elsif ($s->{keys_read_idx} == $s->{code_length_max}-1) {
     return $KEYPAD_TRANSACTION_DONE;
   }
   else {
     return $KEYPAD_TRANSACTION_MAYBE_DONE;
   }
+}
+
+sub sanitate_pin_code {
+  my ($s, $pin_code) = @_;
+  my $enterKey = SSAuthenticator::Config::pinCodeEnterKey();
+  $pin_code =~ s/$enterKey$//; #Trim a trailing special character if the PIN code was manually sent
+  return $pin_code;
 }
 
 sub turnOn {
@@ -167,6 +193,15 @@ sub turnOff {
 
 sub isOn {
   return $_[0]->{_device_on};
+}
+
+sub DESTROY {
+  my ($self) = @_;
+  $kp = undef;
+
+  return unless $self;
+  return unless $self->{dev};
+  undef $self->{dev};
 }
 
 1;

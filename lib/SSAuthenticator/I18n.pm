@@ -40,6 +40,7 @@ our %i18nMsg = (
     'PIN_CODE_TOO_LONG'          => N__"   Wrong PIN code...",
     'PIN_CODE_WRONG'             => N__"   Wrong PIN code   ",
     'PIN_CODE_OK'                => N__"       PIN OK       ",
+    'PIN_CODE_OPTION'            => N__"\# ok         reset \$",
 
     ##INITIALIZATION MESSAGES
     'INITING_STARTING'  => N__"  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n everything I need. ",

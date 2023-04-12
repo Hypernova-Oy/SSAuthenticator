@@ -4,6 +4,7 @@ use Modern::Perl;
 
 use Data::Dumper;
 use Exporter;
+use Storable;
 use Test::More;
 
 use SSAuthenticator;
@@ -15,12 +16,25 @@ use t::Mocks;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(scenario);
 
+sub _defaultHTTPTransactions {
+    return [
+        {   request => {
+                cardnumber => '167A006007',
+            },
+            response => t::Mocks::api_response_card_authz_ok(),
+        },
+        {   request => {
+                password => '1234',
+            },
+            response => t::Mocks::api_response_pin_authn_ok(),
+        },
+    ];
+}
+
 sub scenario {
     my $scen = shift;
-    $t::Mocks::mock_httpTransactions_list = $scen->{httpTransactions};
-    $t::Mocks::keyPad_read_inputs = $scen->{pinCharInput};
-    # When the keypad begins a new transaction, it flushes the input buffer. This removes the first element from the mocked pin-entry list. Adjust to input buffer flushing here.
-    unshift(@$t::Mocks::keyPad_read_inputs, [0,0,0]) if ($t::Mocks::keyPad_read_inputs);
+    $t::Mocks::mock_httpTransactions_list = $scen->{httpTransactions} || _defaultHTTPTransactions();
+    $t::Mocks::keyPad_read_inputs = Storable::dclone($scen->{pinCharInput});
 
     subtest $scen->{name}, sub {
         my $trans = SSAuthenticator::Transaction->new();
@@ -44,6 +58,8 @@ sub scenario {
            "PIN cache flushed ".($scen->{assert_pinCacheFlushed} || 0)) if exists $scen->{assert_pinCacheFlushed};
         is($trans->pinAuthnCacheUsed, $scen->{assert_pinAuthCacheUsed},
            "PIN cache used ".($scen->{assert_pinAuthCacheUsed} || 0)) if exists $scen->{assert_pinAuthCacheUsed};
+        is($trans->pinCode, $scen->{assert_pinCode},
+           "PIN code ".($scen->{assert_pinCode} || 0)) if exists $scen->{assert_pinCode};
 
         if ($scen->{assert_oledMsgs}) {
             subtest $scen->{name}.' - OLED Messages', sub {
@@ -71,6 +87,20 @@ sub scenario {
                 }
                 else {
                     ok(1, 'OLED msgs match');
+                }
+            }
+        }
+
+        if ($scen->{pinCharInput}) {
+            subtest $scen->{name}.' - PIN input', sub {
+                my @errors;
+                for (my $i=0 ; $i<@{$scen->{pinCharInput}} ; $i++) {
+                    my $pinCharInput = $scen->{pinCharInput}->[$i];
+                    my $pinKeyEvent = $trans->pinKeyEvents()->[$i];
+
+                    next if $pinCharInput->[2] eq 'KEYPAD_INACTIVE';
+                    is($pinKeyEvent->[0], $pinCharInput->[0], "PIN input '$i' key is as expected"); #keys match
+                    is($pinKeyEvent->[1], $pinCharInput->[2], "PIN input '$i' key state is as expected");
                 }
             }
         }

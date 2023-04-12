@@ -53,6 +53,8 @@ PINOffPin 26
 RequirePIN 1
 PINLength 4
 PINTimeout 1000
+PINCodeResetKey '\$'
+PINCodeEnterKey '#'
 Verbose 0
 ConnectionTimeout 5
 RandomGreetingChance 50

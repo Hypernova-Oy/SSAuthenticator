@@ -3,7 +3,10 @@ package SSAuthenticator::Transaction;
 use SSAuthenticator::Pragmas;
 
 sub new {
-  return bless({}, $_[0]);
+  my $self =  bless({}, $_[0]);
+  $self->{_oledMessages} = [];
+  $self->{_pinKeyEvents} = [];
+  return $self;
 }
 
 =head attributes
@@ -83,9 +86,23 @@ sub pinCode {
   $_[0]->{_pinCode} = $_[1] if (defined($_[1]));
   return $_[0]->{_pinCode};
 }
+sub pinKeyEvents {
+  #my ($self, $tuple_key_status) = @_;
+  push(@{$_[0]->{_pinKeyEvents}}, $_[1]) if $_[1];
+  return $_[0]->{_pinKeyEvents};
+}
 sub pinLatestKeyStatus {
-  $_[0]->{pinLatestKeyStatus} = $_[1] if (defined($_[1]));
-  return $_[0]->{pinLatestKeyStatus};
+  return $_[0]->{_pinKeyEvents}->[-1]->[1] if $_[0]->{_pinKeyEvents}->[-1];
+  return 0;
+}
+sub pinOldKeyStatus {
+  return $_[0]->{_pinKeyEvents}->[-2]->[1] if $_[0]->{_pinKeyEvents}->[-2];
+  return 0;
+}
+sub pinStateTransitionedTo {
+  #my ($self, $targetStatus) = @_;
+  return 1 if $_[0]->pinLatestKeyStatus == $_[1] && $_[0]->pinOldKeyStatus != $_[0]->pinLatestKeyStatus;
+  return 0;
 }
 
 sub statusesToString {
@@ -95,7 +112,6 @@ sub statusesToString {
 
 sub oledMessages {
     my ($self, $type, $rows) = @_;
-    $self->{_oledMessages} = [] if (not($self->{_oledMessages}));
     if ($type && $rows) {
         push(@{$self->{_oledMessages}}, [$type, $rows]);
     }

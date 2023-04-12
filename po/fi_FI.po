@@ -65,10 +65,10 @@ msgstr "   Nahdaan pian!    "
 msgid "   Welcome again!   "
 msgstr "Tervetuloa uudestaan"
 
-msgid  "   Wrong PIN code   "
+msgid "   Wrong PIN code   "
 msgstr "  Vaara PIN-koodi   "
 
-msgid  "   Wrong PIN code..."
+msgid "   Wrong PIN code..."
 msgstr "  Pitka PIN-koodi   "
 
 msgid "   Wrong borrower   \\n      category      "
@@ -93,7 +93,7 @@ msgstr "  Syota PIN-koodi   "
 msgid " Circulation rules  \\n    not followed    "
 msgstr " Kayttajatilillanne \\n      on esto       "
 
-msgid  " Device API failure \\n Bad authentication "
+msgid " Device API failure \\n Bad authentication "
 msgstr "   Rajapintavirhe   \\n  Tunnistautuminen  "
 
 msgid " Enjoy our library. "
@@ -120,6 +120,9 @@ msgstr "Kayttoehtoja ei ole \\n     hyvaksytty     "
 
 msgid " You are the best!  "
 msgstr "    Olet huippu!    "
+
+msgid "# ok         reset $"
+msgstr "# ok      tyhjenna $"
 
 msgid "<3 <3 <3 <3 <3 <3 <3"
 msgstr "<3 <3 <3 <3 <3 <3 <3"
@@ -153,4 +156,3 @@ msgstr "    Muista minut    "
 
 msgid "Thanks for visiting."
 msgstr " Kiitos kaynnistasi "
-

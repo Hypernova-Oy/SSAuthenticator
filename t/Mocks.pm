@@ -111,6 +111,9 @@ sub _do_api_request_check_against_list {
 
 our $keyPad_read_inputs = [];
 sub _keyPad_read_inputs {
+    my ($keypad, $readBytes) = @_;
+    return (0,0) if $readBytes == 256; #When the KeyPad serial buffer is flushed, 256 bytes is requested. Avoid consuming user input mocks.
+
     my $resp = shift(@$keyPad_read_inputs);
     Time::HiRes::sleep($resp->[1]/1000) if $resp->[1];
     return (1,$resp->[0]);

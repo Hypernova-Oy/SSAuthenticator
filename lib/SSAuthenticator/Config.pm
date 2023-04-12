@@ -91,7 +91,8 @@ sub _isConfigValid {
                   'OpeningHoursDBFile',
                   'ConnectionTimeout', 'DoorOpenDuration',
                   'OLED_ShowCardNumberWhenRead', 'BarcodeReaderModel',
-                  'DoubleReadTimeout', 'Code39DecodingLevel', 'RequirePIN', 'PINLength', 'PINTimeout', 'PINOnPin', 'PINOffPin');
+                  'DoubleReadTimeout', 'Code39DecodingLevel', 'RequirePIN', 'PINLength', 'PINLengthMin', 'PINTimeout', 'PINOnPin', 'PINOffPin',
+                  'PINCodeEnterKey', 'PINCodeResetKey');
                   # Not mandatory anymore
                   # 'LibraryName',
     foreach my $param (@params) {
@@ -212,5 +213,10 @@ sub doRandomMelody {
 sub getRandomMelodySelector {
     return getConfig()->param('RandomMelodySelector') || '^Abba';
 }
-
+sub pinCodeEnterKey {
+    return getConfig()->param('PINCodeEnterKey');
+}
+sub pinCodeResetKey {
+    return getConfig()->param('PINCodeResetKey');
+}
 1;

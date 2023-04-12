@@ -98,6 +98,15 @@ sub showPINStatusOKPIN {
     $l->info("showOLEDMsg():> 3: $msg") if $l->is_info;
 }
 
+sub showPINOptions {
+    my ($trans) = @_;
+    my @msg = (__($i18nMsg->{'PIN_CODE_OPTION'}));
+    $display->printRow(3, $msg[0]);
+    $display->endTransaction();
+    $trans->oledMessages(showPINOptions => \@msg);
+    $l->info("showPINOptions():> 3: $msg[0]") if $l->is_info;
+}
+
 sub showInitializingMsg {
     my ($type) = @_;
     return showOLEDMsg(  [split(/\\n/, __($i18nMsg->{"INITING_$type"}))]  );
