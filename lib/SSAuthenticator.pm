@@ -500,6 +500,8 @@ sub controlAccess {
     } else {
         denyAccess($trans);
     }
+
+    return $trans;
 }
 
 sub config {

@@ -17,6 +17,8 @@ use Test::MockModule;
 
 use t::Examples;
 use t::Mocks;
+use t::Mocks::HTTPResponses;
+use t::Mocks::OpeningHours;
 use SSAuthenticator::Mailbox;
 use SSAuthenticator::Config;
 use SSAuthenticator;
@@ -35,15 +37,8 @@ my $defaultConfTempFile = t::Examples::writeDefaultConf();
 SSAuthenticator::Config::setConfigFile($defaultConfTempFile->filename());
 
 ##Mock subroutines
-$t::Mocks::getApiResponse_mockResponse = {
-    httpCode   => 200,
-    error      => 'Koha::Exception::SelfService::OpeningHours',
-    permission => 'false',
-    startTime  => '09:00',
-    endTime    => '21:00',
-};
 my $ssAuthenticatorApiMockModule = Test::MockModule->new('SSAuthenticator::API');
-$ssAuthenticatorApiMockModule->mock('getApiResponse', \&t::Mocks::getApiResponse);
+$ssAuthenticatorApiMockModule->mock('_do_api_request', \&t::Mocks::_do_api_request_check_against_list);
 my $ssAuthenticatorMockModule = Test::MockModule->new('SSAuthenticator');
 $ssAuthenticatorMockModule->mock('controlAccess', \&controlAccess_counter);
 my $controlAccess_invokedCount = 0;
@@ -57,6 +52,15 @@ sub ssauth_controlAccess {
 
     eval {
     $config = SSAuthenticator::Config::getConfig();
+    my $ohs = t::Mocks::OpeningHours::createAlwaysOpen();
+    ok(SSAuthenticator::OpeningHours::_persistOpeningHoursToDB($ohs), "Given the OpeningHours: Always open");
+
+    $t::Mocks::mock_httpTransactions_list = [{
+        request => {
+            cardnumber => '167A0123123',
+        },
+        response => HTTP::Response->parse(t::Mocks::HTTPResponses::SSStatus401Unauthenticated()),
+    }];
 
     ok(SSAuthenticator::Mailbox::sendMessage(
            'controlAccess',
@@ -68,7 +72,7 @@ sub ssauth_controlAccess {
 
     is($controlAccess_invokedCount, 1,
        'Then we have accessed SSAuthenticator::controlAccess()');
-    is($t::Mocks::getApiResponse_mockResponse->{_triggered}, 1,
+    is(t::Mocks::_was_last_http_response_fired(), 1,
        'Then we have accessed SSAuthenticator::API::getApiResponse()');
 
     };

@@ -125,7 +125,7 @@ sub _canDispatch {
 
 sub dispatch_controlAccess {
     my $self = shift @_;
-    return SSAuthenticator::controlAccess(@_);
+    return SSAuthenticator::controlAccess(@_, SSAuthenticator::Transaction->new());
 }
 
 1;
