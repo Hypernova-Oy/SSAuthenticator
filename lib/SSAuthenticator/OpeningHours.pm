@@ -86,6 +86,7 @@ sub sanitate {
 
 sub synchronize {
     my () = @_;
+    $l->debug("synchronize()") if $l->is_debug();
 
     my $openingHours = loadOpeningHoursFromDB();
     my ($response, $body, $err, $status) = SSAuthenticator::API::getOpeningHours();

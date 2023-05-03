@@ -15,7 +15,7 @@ use SSAuthenticator::OpeningHours;
 use SSAuthenticator::Transaction;
 use SSAuthenticator::Util;
 
-my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $askpin);
+my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $setConfig, $askpin);
 my @params;
 
 GetOptions(
@@ -26,6 +26,7 @@ GetOptions(
     'b'                           => \$barcodeReader,
     'a|api=s'                     => \$apiTest,
     'askpin=s'                    => \$askpin,
+    'c|config=s'                  => \$setConfig,
     'get-config'                  => \$getConfig,
 );
 
@@ -40,10 +41,17 @@ This script needs to be crontabbed hourly, to poll Koha for changes.
 
 Persists polled data on disk for SSAuthenticator to use.
 
+Parameters
+
   -h --help               HELP!
   -v --verbose            Int, sets the verbosity level:
                             -1 less verbose
                             2  most verbose
+  -c --config /path/conf  Load SSAuthenticator configuration from the given file
+
+Environment variables
+
+  SSSAUTHENTICATOR_CONFIG Same as setting the --config -parameter
 
 EXAMPLES
 
@@ -55,6 +63,11 @@ USAGE
 if ($help) {
   print $usage;
   exit 0;
+}
+
+if ($setConfig) {
+  SSAuthenticator::Config::setConfigFile($setConfig);
+  SSAuthenticator::Config::getConfig(); # Make sure the config is loaded before logging or anything else is initialized
 }
 
 SSAuthenticator::OpeningHours::synchronize();

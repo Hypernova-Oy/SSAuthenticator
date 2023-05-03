@@ -16,7 +16,7 @@ use SSAuthenticator::Mailbox;
 use SSAuthenticator::Transaction;
 use SSAuthenticator::Util;
 
-my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $askpin);
+my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $setConfig, $askpin);
 my @params;
 
 GetOptions(
@@ -27,6 +27,7 @@ GetOptions(
     'b'                           => \$barcodeReader,
     'a|api=s'                     => \$apiTest,
     'askpin=s'                    => \$askpin,
+    'c|config=s'                  => \$setConfig,
     'get-config'                  => \$getConfig,
 );
 
@@ -44,12 +45,22 @@ Firstly it reads system configurations from /etc/ssauthenticator
 Then establishes logging and proceeds to do barcode reader autoconfiguration, if it hasn't been
 autoconfigured yet.
 
+Parameters
+
   -h --help               HELP!
   -v --verbose            Int, sets the verbosity level:
                             -1 less verbose
                             2  most verbose
+  -c --config /path/conf  Load SSAuthenticator configuration from the given file
+
+Actions
+
   --get-config            Outputs all config in JSON to STDOUT
   --askpin barcode        Ask for PIN via the keypad for the given barcode
+
+Environment variables
+
+  SSSAUTHENTICATOR_CONFIG Same as setting the --config -parameter
 
 Mailbox-feature
 
@@ -88,6 +99,11 @@ USAGE
 if ($help) {
   print $usage;
   exit 0;
+}
+
+if ($setConfig) {
+  SSAuthenticator::Config::setConfigFile($setConfig);
+  SSAuthenticator::Config::getConfig(); # Make sure the config is loaded before logging or anything else is initialized
 }
 
 if ($barcodeReader) {

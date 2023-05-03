@@ -47,6 +47,7 @@ Reads the config file and returns it.
 sub getConfig {
     unless ($config) {
         eval {
+            $configFile = $ENV{SSAUTHENTICATOR_CONFIG} if $ENV{SSAUTHENTICATOR_CONFIG};
             $config = new Config::Simple($configFile);
         };
         if ($@ || Config::Simple->error()) {
