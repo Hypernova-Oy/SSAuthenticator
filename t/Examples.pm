@@ -52,6 +52,7 @@ PINOnPin 22
 PINOffPin 26
 RequirePIN 1
 PINLength 4
+PINLengthMin 4
 PINTimeout 1000
 PINCodeResetKey '\$'
 PINCodeEnterKey '#'

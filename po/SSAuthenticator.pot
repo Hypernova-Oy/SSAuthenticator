@@ -85,6 +85,9 @@ msgid ""
 "library       "
 msgstr ""
 
+msgid " Reading PIN failed \\n  PIN device error  "
+msgstr ""
+
 msgid " Self-service usage \\n permission revoked "
 msgstr ""
 

@@ -172,6 +172,11 @@ sub _isConfigValid {
         $returnValue = 0;
     }
 
+    #PINValidatorRegexp
+    my $pvr = $c->param('PINValidatorRegexp');
+    $pvr = '^\d+$' unless ($pvr);
+    $c->{PINValidatorRegexp} = qr/$pvr/;
+
     return $returnValue;
 }
 
@@ -219,5 +224,8 @@ sub pinCodeEnterKey {
 }
 sub pinCodeResetKey {
     return getConfig()->param('PINCodeResetKey');
+}
+sub pinValidatorRegexp {
+    return getConfig()->{'PINValidatorRegexp'};
 }
 1;

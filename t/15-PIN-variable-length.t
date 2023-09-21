@@ -91,6 +91,31 @@ sub fixedLengthPIN {
     });
 
     scenario({
+        name => "PIN malformed from device",
+        pinCharInput => [
+            ['1', 100, $KEYPAD_TRANSACTION_UNDERFLOW],
+            ['2', 100, $KEYPAD_TRANSACTION_UNDERFLOW],
+            ['ÿ', 100, $KEYPAD_TRANSACTION_UNDERFLOW], #Malformed character read
+            ['4', 100, $KEYPAD_TRANSACTION_DONE],
+            ['5', 100, 'KEYPAD_INACTIVE'],
+        ],
+        assert_pinAuthStatus => $SSAuthenticator::ERR_PININVALID,
+        assert_oledMsgs => [
+            [showBarcodePostReadMsg => 'Please wait'],
+            [showEnterPINMsg    => 'Please enter PIN'],
+            [showPINProgress    => '\*  I'],
+            [showPINProgress    => '\*\* I'],
+            [showPINProgress    => '\*\*\*I'],
+            [showPINProgress    => '\*\*\*\* '],
+            [showPINStatusWrongPIN => '   Wrong PIN code   '],
+            [showAccessMsg      => 'Reading PIN failed.+?PIN device error'],
+        ],
+        postTests => sub {
+            ok(not($SSAuthenticator::keyPad->isOn()), 'KeyPad is off after querying the PIN-code');
+        },
+    });
+
+    scenario({
         name => "Correct PIN",
         assert_pinCode => "1234",
         pinCharInput => [

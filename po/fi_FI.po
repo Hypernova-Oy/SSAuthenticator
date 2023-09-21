@@ -112,6 +112,9 @@ msgstr ""
 "   Toimintahairio   \\n  En voi palvella.  \\n    Ota yhteytta    \\n    "
 "kirjastoosi.    "
 
+msgid " Reading PIN failed \\n  PIN device error  "
+msgstr "PIN luku epaonnistui\\n   PIN laitevirhe   "
+
 msgid " Self-service usage \\n permission revoked "
 msgstr " Omatoimikirjaston  \\n   kaytto estetty   "
 

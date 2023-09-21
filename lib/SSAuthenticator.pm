@@ -22,6 +22,7 @@ our $ERR_CLOSED;
 our $ERR_BADCARD;
 our $ERR_PINTIMEOUT;
 our $ERR_PINBAD;
+our $ERR_PININVALID;
 our $ERR_SERVER;
 our $ERR_API_AUTH;
 our $ERR_SERVERCONN;
@@ -36,6 +37,7 @@ $ERR_CLOSED        = -6;   #if the library's self-service time is over for the d
 $ERR_BADCARD       = -7;   #if user's cardnumber is not know
 $ERR_PINTIMEOUT    = -9;   #User took too long to enter the PIN code
 $ERR_PINBAD        = -10;  #User entered a wrong PIN number
+$ERR_PININVALID    = -11;  #PIN code doesn't pass a validator regexp
 $ERR_SERVER        = -100; #Server error, probably API Broken or misconfigured from the server side
 $ERR_API_AUTH      = -101; #API auth error
 $ERR_SERVERCONN    = -102; #Server has connection issues
@@ -329,6 +331,11 @@ The cached PIN code is invalidated when it is inputted wrongly.
 sub checkPIN_tryPIN {
     my ($trans, $cardnumber, $pin) = @_;
     $trans->pinAuthnCacheUsed(0);
+
+    unless ($pin =~ config()->{'PINValidatorRegexp'}) {
+        $trans->pinAuthn($ERR_PININVALID);
+        return;
+    }
 
     if (SSAuthenticator::API::isMalfunctioning()) { # Getting the card permissions from the API might have failed, then fall back to cache.
         checkPIN_tryCache($trans, $cardnumber, $pin);

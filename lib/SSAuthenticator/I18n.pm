@@ -28,6 +28,7 @@ our %i18nMsg = (
     $SSAuthenticator::ERR_BADCARD  , N__"Card not recognized ",
     $SSAuthenticator::ERR_PINBAD   , N__"  Invalid PIN-code  ",
     $SSAuthenticator::ERR_PINTIMEOUT,N__"PIN entry timeouted ",
+    $SSAuthenticator::ERR_PININVALID,N__" Reading PIN failed \\n  PIN device error  ",
     $SSAuthenticator::ERR_SERVER   , N__"    Server error    ",
     $SSAuthenticator::ERR_SERVERCONN,N__"  Connection error  ",
     'CACHE_USED'                 => N__" I Remembered you!  ",
