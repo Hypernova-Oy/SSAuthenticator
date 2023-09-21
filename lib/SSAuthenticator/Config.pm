@@ -174,8 +174,18 @@ sub _isConfigValid {
 
     #PINValidatorRegexp
     my $pvr = $c->param('PINValidatorRegexp');
-    $pvr = '^\d+$' unless ($pvr);
+    unless ($pvr) {
+        $pvr = '^\d+$';
+        print "Param 'PINValidatorRegexp' is not defined. Defaulting to '$pvr'.";
+    }
     $c->{PINValidatorRegexp} = qr/$pvr/;
+
+    #PINDisplayStyle
+    $c->param('PINDisplayStyle', 'hide') unless ($c->param('PINDisplayStyle'));
+    unless ($c->param('PINDisplayStyle') eq 'hide' || $c->param('PINDisplayStyle') eq 'show' || $c->param('PINDisplayStyle') eq 'last') {
+        warn "Param 'PINDisplayStyle' value '".$c->param('PINDisplayStyle')."' is not one of [hide, show, last]. Defaulting to 'hide'.";
+        $c->param('PINDisplayStyle', 'hide');
+    }
 
     return $returnValue;
 }
@@ -224,6 +234,9 @@ sub pinCodeEnterKey {
 }
 sub pinCodeResetKey {
     return getConfig()->param('PINCodeResetKey');
+}
+sub pinDisplayStyle {
+    return getConfig()->param('PINDisplayStyle');
 }
 sub pinValidatorRegexp {
     return getConfig()->{'PINValidatorRegexp'};

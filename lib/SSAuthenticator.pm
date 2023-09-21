@@ -281,23 +281,23 @@ sub checkPIN {
     while(defined($keyPad->wait_for_key())) {
         $trans->pinKeyEvents([$keyPad->{last_key}, $keyPad->maybe_transaction_complete()]);
         if    ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_UNDERFLOW) {
-            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad);
         }
         elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_OVERFLOW) {
-            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad);
             SSAuthenticator::OLED::showPINStatusOverflow($trans);
             $trans->pinCode($keyPad->{key_buffer});
             $keyPad->turnOff();
             return $trans;
         }
         elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_MAYBE_DONE) {
-            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad);
             if ($trans->pinStateTransitionedTo($SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_MAYBE_DONE)) {
                 SSAuthenticator::OLED::showPINOptions($trans);
             }
         }
         elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_DONE) {
-            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad);
             $trans->pinCode($keyPad->sanitate_pin_code($keyPad->{key_buffer}));
             checkPIN_tryPIN($trans, $cardnumber, $trans->pinCode());
             if ($trans->pinAuthn > 0) {
@@ -312,7 +312,7 @@ sub checkPIN {
             }
         }
         elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_RESET) {
-            SSAuthenticator::OLED::showPINProgress($trans, $keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+            SSAuthenticator::OLED::showPINProgress($trans, $keyPad);
         }
     }
 }

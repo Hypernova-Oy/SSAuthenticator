@@ -11,6 +11,7 @@ use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. 
 use OLED::Client;
 use POSIX;
 
+use SSAuthenticator::Config;
 use SSAuthenticator::I18n qw($i18nMsg);
 use SSAuthenticator::Greetings;
 use SSAuthenticator::SharedState;
@@ -63,12 +64,35 @@ sub showEnterPINMsg {
 }
 
 sub showPINProgress {
-    my ($trans, $charsInput, $pinProgressTemplate) = @_;
+    my ($trans, $keyPad) = @_;
+    my ($charsInput, $pinProgressTemplate) = ($keyPad->{keys_read_idx}+1, $keyPad->{pin_progress_template});
+
     my $stars = '*'x$charsInput;
-    $pinProgressTemplate =~ s/^.{$charsInput}/$stars/;
-    $display->printRow(2, $pinProgressTemplate);
-    $trans->oledMessages(showPINProgress => [$pinProgressTemplate]);
-    $l->info("showOLEDMsg():> 2: $pinProgressTemplate") if $l->is_info;
+    my $hiddenPinProgressTemplate = $pinProgressTemplate;
+    $hiddenPinProgressTemplate =~ s/^.{$charsInput}/$stars/;
+
+    my $style = SSAuthenticator::Config::pinDisplayStyle;
+    if ($style eq 'hide') {
+        $display->printRow(2, $hiddenPinProgressTemplate);
+        $trans->oledMessages(showPINProgress => [$hiddenPinProgressTemplate]);
+        $l->info("showOLEDMsg():> 2: $hiddenPinProgressTemplate") if $l->is_info;
+    }
+    elsif ($style eq 'show') {
+        $pinProgressTemplate =~ s/^.{$charsInput}/$keyPad->{key_buffer}/;
+        $display->printRow(2, $pinProgressTemplate);
+        $trans->oledMessages(showPINProgress => [$pinProgressTemplate]);
+        $l->info("showOLEDMsg():> 2: $hiddenPinProgressTemplate") if $l->is_info; # No logging of user credentials, even if displayed on the screen
+    }
+    elsif ($style eq 'last') {
+        my $lastPINChar = substr($keyPad->{key_buffer}, -1);
+        $charsInput--;
+        my $stars = '*'x($charsInput);
+        $pinProgressTemplate =~ s/^.{$charsInput}./$stars$lastPINChar/;
+
+        $display->printRow(2, $pinProgressTemplate);
+        $trans->oledMessages(showPINProgress => [$pinProgressTemplate]);
+        $l->info("showOLEDMsg():> 2: $hiddenPinProgressTemplate") if $l->is_info; # No logging of user credentials, even if displayed on the screen
+    }
 }
 
 sub showPINStatusOverflow {

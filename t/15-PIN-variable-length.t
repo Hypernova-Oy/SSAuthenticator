@@ -69,6 +69,8 @@ sub fixedLengthPIN {
     SSAuthenticator::Config::getConfig()->param('PINLengthMin', 4);
     $SSAuthenticator::keyPad = SSAuthenticator::Device::KeyPad::init(SSAuthenticator::config());
 
+
+    SSAuthenticator::Config::getConfig()->param('PINDisplayStyle', 'hide');
     scenario({
         name => "PIN timeouts",
         pinCharInput => [
@@ -90,6 +92,7 @@ sub fixedLengthPIN {
         },
     });
 
+    SSAuthenticator::Config::getConfig()->param('PINDisplayStyle', 'show');
     scenario({
         name => "PIN malformed from device",
         pinCharInput => [
@@ -103,10 +106,10 @@ sub fixedLengthPIN {
         assert_oledMsgs => [
             [showBarcodePostReadMsg => 'Please wait'],
             [showEnterPINMsg    => 'Please enter PIN'],
-            [showPINProgress    => '\*  I'],
-            [showPINProgress    => '\*\* I'],
-            [showPINProgress    => '\*\*\*I'],
-            [showPINProgress    => '\*\*\*\* '],
+            [showPINProgress    => '1  I'],
+            [showPINProgress    => '12 I'],
+            [showPINProgress    => '12ÿI'],
+            [showPINProgress    => '12ÿ4 '],
             [showPINStatusWrongPIN => '   Wrong PIN code   '],
             [showAccessMsg      => 'Reading PIN failed.+?PIN device error'],
         ],
@@ -115,6 +118,7 @@ sub fixedLengthPIN {
         },
     });
 
+    SSAuthenticator::Config::getConfig()->param('PINDisplayStyle', 'last');
     scenario({
         name => "Correct PIN",
         assert_pinCode => "1234",
@@ -128,10 +132,10 @@ sub fixedLengthPIN {
         assert_pinAuthStatus => 1,
         assert_oledMsgs => [
             [showEnterPINMsg    => 'Please enter PIN'],
-            [showPINProgress    => '\*  I'],
-            [showPINProgress    => '\*\* I'],
-            [showPINProgress    => '\*\*\*I'],
-            [showPINProgress    => '\*\*\*\* '],
+            [showPINProgress    => '1  I'],
+            [showPINProgress    => '\*2 I'],
+            [showPINProgress    => '\*\*3I'],
+            [showPINProgress    => '\*\*\*4 '],
             [showPINStatusOKPIN => 'PIN OK'],
         ],
     });
@@ -141,6 +145,7 @@ subtest "Scenario: Variable-length PIN-code requires no termination sign once ma
 sub variableLengthPIN {
     SSAuthenticator::Config::getConfig()->param('PINLength', 8);
     SSAuthenticator::Config::getConfig()->param('PINLengthMin', 4);
+    SSAuthenticator::Config::getConfig()->param('PINDisplayStyle', 'hide');
     $SSAuthenticator::keyPad = SSAuthenticator::Device::KeyPad::init(SSAuthenticator::config());
 
     scenario({
@@ -200,6 +205,7 @@ subtest "Scenario: Variable-length PIN-code is sent after #-key is pressed. PIN-
 sub variableLengthSpecialCharactersPIN {
     SSAuthenticator::Config::getConfig()->param('PINLength', 10);
     SSAuthenticator::Config::getConfig()->param('PINLengthMin', 5);
+    SSAuthenticator::Config::getConfig()->param('PINDisplayStyle', 'hide');
     $SSAuthenticator::keyPad = SSAuthenticator::Device::KeyPad::init(SSAuthenticator::config());
 
     scenario({

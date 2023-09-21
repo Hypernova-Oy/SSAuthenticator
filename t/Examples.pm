@@ -56,6 +56,7 @@ PINLengthMin 4
 PINTimeout 1000
 PINCodeResetKey '\$'
 PINCodeEnterKey '#'
+PINValidatorRegexp '^\\d+\$'
 Verbose 0
 ConnectionTimeout 5
 RandomGreetingChance 50
