@@ -28,6 +28,7 @@ my $build = Module::Build->new(
         'LWP::UserAgent'     => undef,
         'Modern::Perl'       => undef,
         'POSIX'              => undef,
+        'Proc::Find'         => undef,
         'Struct::Diff'       => undef,
         'Sys::SigAction'     => undef,
         'Test::More'         => undef,

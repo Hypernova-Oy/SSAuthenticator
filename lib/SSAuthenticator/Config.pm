@@ -190,7 +190,11 @@ sub _isConfigValid {
     return $returnValue;
 }
 
-
+sub logConfigFromSignal {
+    my $d = Data::Dumper->new([getConfig()],[]);
+    $d->Sortkeys(1);
+    $l->info($d->Dump());
+}
 
 
 ############################################################

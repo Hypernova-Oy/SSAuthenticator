@@ -8,6 +8,8 @@ package SSAuthenticator;
 
 our $VERSION = "0.14";
 
+$SIG{USR1} = \&SSAuthenticator::Config::logConfigFromSignal;
+
 #Self-service authorization statuses
 #Statuses > 0 are success statuses
 #Statuses between -1 and -99 are user failure statuses

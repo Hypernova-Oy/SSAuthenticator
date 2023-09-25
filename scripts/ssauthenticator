@@ -16,7 +16,7 @@ use SSAuthenticator::Mailbox;
 use SSAuthenticator::Transaction;
 use SSAuthenticator::Util;
 
-my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $setConfig, $askpin);
+my ($help, $message, $verbose, $barcodeReader, $apiTest, $getConfig, $setConfig, $askpin, $dump);
 my @params;
 
 GetOptions(
@@ -29,6 +29,7 @@ GetOptions(
     'askpin=s'                    => \$askpin,
     'c|config=s'                  => \$setConfig,
     'get-config'                  => \$getConfig,
+    'dump'                        => \$dump,
 );
 
 $ENV{SSA_LOG_LEVEL} = $verbose if $verbose;
@@ -57,6 +58,7 @@ Actions
 
   --get-config            Outputs all config in JSON to STDOUT
   --askpin barcode        Ask for PIN via the keypad for the given barcode
+  --dump                  Dump config information of the running systemd-service
 
 Environment variables
 
@@ -150,6 +152,16 @@ elsif ($askpin) {
       Data::Printer::p($@);
     }
     sleep(1);
+  }
+}
+elsif ($dump) {
+  require Proc::Find;
+  my $pids = Proc::Find::find_proc(cmndline => qr{/usr/local/bin/ssauthenticator});
+  if ($pids && ref($pids) eq 'ARRAY') {
+    for my $pid (@$pids) {
+      kill('USR1' => $pid);
+      print("Sig 'USR1' sent to pid '$pid'\n");
+    }
   }
 }
 else {
