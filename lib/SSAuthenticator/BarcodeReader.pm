@@ -8,18 +8,6 @@ package SSAuthenticator::BarcodeReader;
 use SSAuthenticator::Pragmas;
 my $l = bless({}, 'SSLog');
 
-sub getBarcodeSeparator {
-    # TODO: Check if param exists before comparing.
-    my $conf = SSAuthenticator::Config::getConfig();
-    if ($conf->param('CarriageReturnAsSeparator') && $conf->param('CarriageReturnAsSeparator') eq "true") {
-        $l->info("using \\r as barcode separator") if $l->is_info;
-        return "\r";
-    } else {
-        $l->info("using \\n as barcode separator") if $l->is_info;
-        return "\n";
-    }
-}
-
 sub configureBarcodeScanner {
     my $brm = SSAuthenticator::Config::getConfig()->param('BarcodeReaderModel');
     if    ($brm =~ /^GFS4400$/) {

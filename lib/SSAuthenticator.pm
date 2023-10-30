@@ -518,7 +518,7 @@ sub config {
 }
 
 sub main {
-    local $/ = SSAuthenticator::BarcodeReader::getBarcodeSeparator();
+    local $/ = "\n" || "\r"; # This might have sometimes been also \r, but all devices are configured for \n
 
     SSAuthenticator::I18n::setDefaultLanguage();
     SSAuthenticator::OLED::showInitializingMsg('STARTING');
