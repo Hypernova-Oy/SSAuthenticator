@@ -245,4 +245,7 @@ sub pinDisplayStyle {
 sub pinValidatorRegexp {
     return getConfig()->{'PINValidatorRegexp'};
 }
+sub pinShowExtraLight {
+    return getConfig()->('PINShowExtraLight');
+}
 1;
