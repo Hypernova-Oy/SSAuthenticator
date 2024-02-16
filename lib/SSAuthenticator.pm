@@ -278,7 +278,7 @@ sub checkCard_tryCache {
 sub checkPIN {
     my ($trans, $cardnumber) = @_;
     $keyPad->_transaction_new();
-    SSAuthenticator::Device::RGBLed::ledOn( config()->pinShowExtraLight() ) if config()->pinShowExtraLight();
+    SSAuthenticator::Device::RGBLed::ledOn( config()->param('PINShowExtraLight') ) if config()->param('PINShowExtraLight');
     SSAuthenticator::OLED::showEnterPINMsg($trans);
     $keyPad->turnOn();
     while(defined($keyPad->wait_for_key())) {
@@ -291,7 +291,7 @@ sub checkPIN {
             SSAuthenticator::OLED::showPINStatusOverflow($trans);
             $trans->pinCode($keyPad->{key_buffer});
             $keyPad->turnOff();
-            SSAuthenticator::Device::RGBLed::ledOff( config()->pinShowExtraLight() ) if config()->pinShowExtraLight();
+            SSAuthenticator::Device::RGBLed::ledOff( config()->param('PINShowExtraLight') ) if config()->param('PINShowExtraLight');
             return $trans;
         }
         elsif ($trans->pinLatestKeyStatus == $SSAuthenticator::Device::KeyPad::KEYPAD_TRANSACTION_MAYBE_DONE) {
@@ -307,13 +307,13 @@ sub checkPIN {
             if ($trans->pinAuthn > 0) {
                 SSAuthenticator::OLED::showPINStatusOKPIN($trans);
                 $keyPad->turnOff();
-                SSAuthenticator::Device::RGBLed::ledOff( config()->pinShowExtraLight() ) if config()->pinShowExtraLight();
+                SSAuthenticator::Device::RGBLed::ledOff( config()->param('PINShowExtraLight') ) if config()->param('PINShowExtraLight');
                 return $trans;
             }
             else {
                 SSAuthenticator::OLED::showPINStatusWrongPIN($trans);
                 $keyPad->turnOff();
-                SSAuthenticator::Device::RGBLed::ledOff( config()->pinShowExtraLight() ) if config()->pinShowExtraLight();
+                SSAuthenticator::Device::RGBLed::ledOff( config()->param('PINShowExtraLight') ) if config()->param('PINShowExtraLight');
                 return $trans;
             }
         }
