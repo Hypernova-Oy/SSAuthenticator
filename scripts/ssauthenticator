@@ -141,6 +141,8 @@ elsif ($message) {
   SSAuthenticator::Mailbox::sendMessage($message, @params);
 }
 elsif ($askpin) {
+  require SSAuthenticator::Device::RGBLed;
+  SSAuthenticator::Device::RGBLed::init();
   $SSAuthenticator::keyPad = SSAuthenticator::Device::KeyPad::init(SSAuthenticator::config());
   while (1) {
     eval {

@@ -246,6 +246,6 @@ sub pinValidatorRegexp {
     return getConfig()->{'PINValidatorRegexp'};
 }
 sub pinShowExtraLight {
-    return getConfig()->('PINShowExtraLight');
+    return getConfig()->param('PINShowExtraLight');
 }
 1;
