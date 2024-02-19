@@ -501,7 +501,7 @@ sub controlAccess {
     my ($cardnumber, $trans) = @_;
 
     $l->info("main() Read barcode '$cardnumber'") if $l->is_info;
-    SSAuthenticator::OLED::showBarcodePostReadMsg($trans, $cardnumber) if config()->param('OLED_ShowCardNumberWhenRead');
+    SSAuthenticator::OLED::showBarcodePostReadMsg($trans, $cardnumber);
     #sleep 1; #DEBUG: Sleep a bit to make more sense out of the barcode on the OLED-display.
 
     isAuthorized($trans, $cardnumber);

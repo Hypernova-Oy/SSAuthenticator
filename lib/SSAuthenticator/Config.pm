@@ -187,6 +187,16 @@ sub _isConfigValid {
         $c->param('PINDisplayStyle', 'hide');
     }
 
+    #OLED_ShowCardNumberWhenRead
+    my $char = substr ($c->param('OLED_ShowCardNumberWhenRead'), 0, 1);
+    if ($char eq 'b' || $char eq 'm' || $char eq 'h') {
+        $c->param('OLED_ShowCardNumberWhenRead', $char);
+    }
+    else {
+        warn "Param 'OLED_ShowCardNumberWhenRead'='".$c->param('OLED_ShowCardNumberWhenRead')."' is invalid. First character not one of [bmh]! Defaulting to 'h'.";
+        $c->param('OLED_ShowCardNumberWhenRead', 'h');
+    }
+
     return $returnValue;
 }
 
@@ -232,6 +242,9 @@ sub doRandomMelody {
 }
 sub getRandomMelodySelector {
     return getConfig()->param('RandomMelodySelector') || '^Abba';
+}
+sub oledShowCardNumberWhenRead {
+    return getConfig()->param('OLED_ShowCardNumberWhenRead');
 }
 sub pinCodeEnterKey {
     return getConfig()->param('PINCodeEnterKey');

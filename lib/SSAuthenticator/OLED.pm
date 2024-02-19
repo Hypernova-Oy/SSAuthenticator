@@ -138,14 +138,27 @@ sub showInitializingMsg {
 
 sub showBarcodePostReadMsg {
     my ($trans, $barcode) = @_;
-    my $rows = [
-        __($i18nMsg->{'BARCODE_READ'}),
-        __($i18nMsg->{'PLEASE_WAIT'}),
-        __($i18nMsg->{'BLANK_ROW'}),
-        _centerRow($barcode),
-    ];
-    $trans->oledMessages(showBarcodePostReadMsg => $rows);
-    return showOLEDMsg($rows);
+    if (SSAuthenticator::Config::oledShowCardNumberWhenRead() eq 'b') { #barcode
+        my $rows = [
+            __($i18nMsg->{'BARCODE_READ'}),
+            __($i18nMsg->{'PLEASE_WAIT'}),
+            __($i18nMsg->{'BLANK_ROW'}),
+            _centerRow($barcode),
+        ];
+        $trans->oledMessages(showBarcodePostReadMsg => $rows);
+        return showOLEDMsg($rows);
+    }
+    elsif (SSAuthenticator::Config::oledShowCardNumberWhenRead() eq 'm') { #message only
+        my $rows = [
+            __($i18nMsg->{'BARCODE_READ'}),
+            __($i18nMsg->{'PLEASE_WAIT'}),
+        ];
+        $trans->oledMessages(showBarcodePostReadMsg => $rows);
+        return showOLEDMsg($rows);
+    }
+    else {
+        return 1;
+    }
 }
 
 sub allYourBaseAreBelongToUs {
