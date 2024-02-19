@@ -124,8 +124,8 @@ msgstr "Kayttoehtoja ei ole \\n     hyvaksytty     "
 msgid " You are the best!  "
 msgstr "    Olet huippu!    "
 
-msgid "# ok         reset $"
-msgstr "# ok      tyhjenna $"
+msgid "* reset         ok #"
+msgstr "* tyhjenna      ok #"
 
 msgid "<3 <3 <3 <3 <3 <3 <3"
 msgstr "<3 <3 <3 <3 <3 <3 <3"
