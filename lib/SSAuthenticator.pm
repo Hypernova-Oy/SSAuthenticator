@@ -551,6 +551,7 @@ sub main {
         if ($cardnumber) {
             chomp($cardnumber);
             eval {
+                SSAuthenticator::Device::RGBLed::blink('blue');
                 controlAccess($cardnumber, SSAuthenticator::Transaction->new());
             };
             if ($@) {

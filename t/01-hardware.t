@@ -3,6 +3,7 @@
 use Modern::Perl;
 use Test::More;
 use Test::MockModule;
+use POSIX qw(floor ceil);
 
 use t::Examples;
 
@@ -41,6 +42,12 @@ sub ledInspection {
     ok(SSAuthenticator::Device::RGBLed::ledOn('blue'), "Blue on");
     sleep($ledDuration);
     ok(SSAuthenticator::Device::RGBLed::ledOff('blue'), "Blue off");
+
+    #blinking test
+    my $repeat = floor($ledDuration / $SSAuthenticator::Device::RGBLed::blinkSleep);
+    SSAuthenticator::OLED::showOLEDMsg(
+        ["Blinking blue led on","    for ".sprintf("%02d", $repeat)." times    "]);
+    ok(SSAuthenticator::Device::RGBLed::blink('blue'), "Blue blinking $_/$repeat") for (1..$repeat);
 }
 
 subtest "Manually inspect the lock signaling relay", \&lockControl;

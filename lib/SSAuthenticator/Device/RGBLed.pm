@@ -7,6 +7,7 @@ use SSAuthenticator::Pragmas;
 
 my $l = bless({}, 'SSLog');
 
+our $blinkSleep = 0.1;
 my %leds = ();
 
 sub init {
@@ -23,6 +24,13 @@ sub ledOn {
 }
 sub ledOff {
     my ($colour) = @_;
+    $leds{$colour}->turnOff();
+    return 1;
+}
+sub blink {
+    my ($colour) = @_;
+    $leds{$colour}->turnOn();
+    Time::HiRes::sleep($blinkSleep);
     $leds{$colour}->turnOff();
     return 1;
 }
