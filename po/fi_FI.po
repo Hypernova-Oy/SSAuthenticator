@@ -26,53 +26,53 @@ msgid "       PIN OK       "
 msgstr "       PIN OK       "
 
 msgid "     Age limit      "
-msgstr "     Ikarajaus      "
+msgstr "     Ikärajaus      "
 
 msgid "     Have fun!   :) "
-msgstr "  Pida hauskaa   :) "
+msgstr "  Pidä hauskaa   :) "
 
 msgid "     Take care!     "
-msgstr "    Pida huolta!    "
+msgstr "    Pidä huolta!    "
 
 msgid "    Barcode read    "
 msgstr "   Kortti luettu    "
 
 msgid "    Please wait     "
-msgstr "   Odota, ole hyva  "
+msgstr "   Odota, ole hyvä  "
 
 msgid "    Server error    "
 msgstr "   Palvelinvirhe    "
 
 msgid "   Access denied    "
-msgstr "    Paasy evatty    "
+msgstr "    Pääsy evätty    "
 
 msgid "   Access granted   "
-msgstr "   Paasy sallittu   "
+msgstr "   Pääsy sallittu   "
 
 msgid ""
 "   I am complete    \\n   Please use me.   \\n                    "
 "\\n                    "
 msgstr ""
-"    Olen valmis.    \\n  Tule kayttamaan   \\n       minua!       "
+"    Olen valmis.    \\n  Tule käyttämään   \\n       minua!       "
 "\\n                    "
 
 msgid "   Library closed   "
 msgstr "Kirjasto on suljettu"
 
 msgid "   See you soon!    "
-msgstr "   Nahdaan pian!    "
+msgstr "   Nähdään pian!    "
 
 msgid "   Welcome again!   "
 msgstr "Tervetuloa uudestaan"
 
 msgid "   Wrong PIN code   "
-msgstr "  Vaara PIN-koodi   "
+msgstr "  Väärä PIN-koodi   "
 
 msgid "   Wrong PIN code..."
-msgstr "  Pitka PIN-koodi   "
+msgstr "  Pitkä PIN-koodi   "
 
 msgid "   Wrong borrower   \\n      category      "
-msgstr "  Vaara asiakaslaji "
+msgstr "  Väärä asiakaslaji "
 
 msgid "  Connection error  "
 msgstr " Odottamaton virhe  "
@@ -81,17 +81,17 @@ msgid ""
 "  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n "
 "everything I need. "
 msgstr ""
-"Mina vasta herailen.\\n Odotatko hetkisen? \\n    Tarkistetaan    "
+"Minä vasta heräilen.\\n Odotatko hetkisen? \\n    Tarkistetaan    "
 "\\n                    "
 
 msgid "  Invalid PIN-code  "
 msgstr "Tuntematon PIN-koodi"
 
 msgid "  Please enter PIN  "
-msgstr "  Syota PIN-koodi   "
+msgstr "  Syötä PIN-koodi   "
 
 msgid " Circulation rules  \\n    not followed    "
-msgstr " Kayttajatilillanne \\n      on esto       "
+msgstr " Käyttäjätilillänne \\n      on esto       "
 
 msgid " Device API failure \\n Bad authentication "
 msgstr "   Rajapintavirhe   \\n  Tunnistautuminen  "
@@ -109,23 +109,23 @@ msgid ""
 " I have failed you  \\n  I am not working  \\nPlease contact your \\n      "
 "library       "
 msgstr ""
-"   Toimintahairio   \\n  En voi palvella.  \\n    Ota yhteytta    \\n    "
+"   Toimintahäiriö   \\n  En voi palvella.  \\n    Ota yhteyttä    \\n    "
 "kirjastoosi.    "
 
 msgid " Reading PIN failed \\n  PIN device error  "
-msgstr "PIN luku epaonnistui\\n   PIN laitevirhe   "
+msgstr "PIN luku epäonnistui\\n   PIN laitevirhe   "
 
 msgid " Self-service usage \\n permission revoked "
-msgstr " Omatoimikirjaston  \\n   kaytto estetty   "
+msgstr " Omatoimikirjaston  \\n   käyttö estetty   "
 
 msgid " Terms & Conditions \\n    not accepted    "
-msgstr "Kayttoehtoja ei ole \\n     hyvaksytty     "
+msgstr "Käyttöehtoja ei ole \\n     hyväksytty     "
 
 msgid " You are the best!  "
 msgstr "    Olet huippu!    "
 
 msgid "* reset         ok #"
-msgstr "* tyhjenna      ok #"
+msgstr "* tyhjennä      ok #"
 
 msgid "<3 <3 <3 <3 <3 <3 <3"
 msgstr "<3 <3 <3 <3 <3 <3 <3"
@@ -134,22 +134,22 @@ msgid "Card not recognized "
 msgstr " Tuntematon kortti  "
 
 msgid "Contact your library"
-msgstr " Kysy lisaa meilta  "
+msgstr " Kysy lisää meiltä  "
 
 msgid "I am but a robot ..."
-msgstr "Olen pelkka robotti."
+msgstr "Olen pelkkä robotti."
 
 msgid "I hope you like us! "
-msgstr " Pidathan minusta?  "
+msgstr " Pidäthän minusta?  "
 
 msgid "I like you already. "
-msgstr "Tykkaan jo sinusta! "
+msgstr "Tykkään jo sinusta! "
 
 msgid "Open at"
 msgstr "Avoinna"
 
 msgid "Our place is great. "
-msgstr "Meidan kirjasto on 1"
+msgstr "Meidän kirjasto on 1"
 
 msgid "PIN entry timeouted "
 msgstr "  PIN aikakatkaisu  "
@@ -158,4 +158,4 @@ msgid "Please remember me! "
 msgstr "    Muista minut    "
 
 msgid "Thanks for visiting."
-msgstr " Kiitos kaynnistasi "
+msgstr " Kiitos käynnistäsi "
