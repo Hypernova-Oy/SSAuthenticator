@@ -31,5 +31,11 @@ sub get_constant_name {
   }
 }
 
+sub as_hex {
+  my ($m) = @_;
+  my @a; push(@a,unpack(" H* ", $_)) for (split(//, $m));
+  return 'HEX: '.join(" ", @a).' UTF8='.Encode::is_utf8($m);
+}
+
 1;
 
