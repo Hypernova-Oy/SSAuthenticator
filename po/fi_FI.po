@@ -75,7 +75,7 @@ msgid "   Wrong borrower   \\n      category      "
 msgstr "  Väärä asiakaslaji "
 
 msgid "  Connection error  "
-msgstr " Odottamaton virhe  "
+msgstr " Verkkoyhteysvirhe  "
 
 msgid ""
 "  I am waking up.   \\nPlease wait a moment\\nWhile I check I have\\n "

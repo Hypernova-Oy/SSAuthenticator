@@ -25,7 +25,14 @@ sub showAccessMsg {
 
     my @msg;
     no warnings 'uninitialized';
-    push(@msg, split(/\\n/, __($i18nMsg->{'ACCESS_DENIED'}))) if (not($trans->auth));
+    if (not($trans->auth)) {
+        if (SSAuthenticator::API::isMalfunctioning()) {
+            push(@msg, split(/\\n/, __($i18nMsg->{SSAuthenticator::API::isMalfunctioning()})));
+        }
+        else {
+            push(@msg, split(/\\n/, __($i18nMsg->{'ACCESS_DENIED'})));
+        }
+    }
     push(@msg, split(/\\n/, __($i18nMsg->{$trans->pinAuthn || $trans->cardAuthz})));
     push(@msg, split(/\\n/, __($i18nMsg->{'OPEN_AT'}).' '.SSAuthenticator::SharedState::get('openingTime').'-'.SSAuthenticator::SharedState::get('closingTime'))) if $trans->cardAuthz == $SSAuthenticator::ERR_CLOSED;
     push(@msg, split(/\\n/, __($i18nMsg->{'CONTACT_LIBRARY'}))) if (not($trans->auth) && $trans->pinAuthn != $SSAuthenticator::ERR_PINTIMEOUT && $trans->pinAuthn != $SSAuthenticator::ERR_PINBAD);
