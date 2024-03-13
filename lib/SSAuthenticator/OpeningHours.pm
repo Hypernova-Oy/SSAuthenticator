@@ -25,8 +25,7 @@ use YAML::XS;
 
 use SSAuthenticator::API;
 use SSAuthenticator::Config;
-use SSLog;
-
+use SSAuthenticator::Pragmas;
 my $l = bless({}, 'SSLog');
 
 sub new {

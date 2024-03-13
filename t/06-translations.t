@@ -35,9 +35,9 @@ sub translationsFi_FI {
 
     subtest "accessGranted fi_FI", sub {
         my $trans = SSAuthenticator::Transaction->new();
-        $trans->auth(SSAuthenticator::OK);
-        $trans->pinAuthn(SSAuthenticator::OK);
-        $trans->cardAuthz(SSAuthenticator::OK);
+        $trans->auth($SSAuthenticator::OK);
+        $trans->pinAuthn($SSAuthenticator::OK);
+        $trans->cardAuthz($SSAuthenticator::OK);
 
         ok(SSAuthenticator::OLED::showAccessMsg($trans), "Show access message");
         is($trans->oledMessages()->[0]->[0], "showAccessMsg", "Correct type of OLED message generated");
@@ -45,9 +45,9 @@ sub translationsFi_FI {
     };
     subtest "accessDenied fi_FI", sub {
         my $trans = SSAuthenticator::Transaction->new();
-        $trans->auth(SSAuthenticator::ERR_SSTAC);
-        $trans->pinAuthn(SSAuthenticator::ERR_SSTAC);
-        $trans->cardAuthz(SSAuthenticator::ERR_SSTAC);
+        $trans->auth($SSAuthenticator::ERR_SSTAC);
+        $trans->pinAuthn($SSAuthenticator::ERR_SSTAC);
+        $trans->cardAuthz($SSAuthenticator::ERR_SSTAC);
 
         ok(SSAuthenticator::OLED::showAccessMsg($trans), "Show access message");
         is($trans->oledMessages()->[0]->[0], "showAccessMsg", "Correct type of OLED message generated");
@@ -63,9 +63,9 @@ sub translationsEn_GB {
 
     subtest "accessGranted en_GB", sub {
         my $trans = SSAuthenticator::Transaction->new();
-        $trans->auth(SSAuthenticator::OK);
-        $trans->pinAuthn(SSAuthenticator::OK);
-        $trans->cardAuthz(SSAuthenticator::OK);
+        $trans->auth($SSAuthenticator::OK);
+        $trans->pinAuthn($SSAuthenticator::OK);
+        $trans->cardAuthz($SSAuthenticator::OK);
 
         ok(SSAuthenticator::OLED::showAccessMsg($trans), "Show access message");
         is($trans->oledMessages()->[0]->[0], "showAccessMsg", "Correct type of OLED message generated");
@@ -73,9 +73,9 @@ sub translationsEn_GB {
     };
     subtest "accessDenied en_GB", sub {
         my $trans = SSAuthenticator::Transaction->new();
-        $trans->auth(SSAuthenticator::ERR_SSTAC);
-        $trans->pinAuthn(SSAuthenticator::ERR_SSTAC);
-        $trans->cardAuthz(SSAuthenticator::ERR_SSTAC);
+        $trans->auth($SSAuthenticator::ERR_SSTAC);
+        $trans->pinAuthn($SSAuthenticator::ERR_SSTAC);
+        $trans->cardAuthz($SSAuthenticator::ERR_SSTAC);
 
         ok(SSAuthenticator::OLED::showAccessMsg($trans), "Show access message");
         is($trans->oledMessages()->[0]->[0], "showAccessMsg", "Correct type of OLED message generated");

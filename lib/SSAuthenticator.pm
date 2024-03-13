@@ -68,6 +68,7 @@ use Time::HiRes;
 
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
+use SSAuthenticator::Pragmas;
 use GPIO;
 use SSAuthenticator::API;
 use SSAuthenticator::BarcodeReader;

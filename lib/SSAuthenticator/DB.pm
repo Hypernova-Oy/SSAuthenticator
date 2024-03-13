@@ -10,7 +10,7 @@ use Modern::Perl;
 use Data::Dumper;
 use DBM::Deep;
 
-use SSLog;
+use SSAuthenticator::Pragmas;
 
 =head1 SSAuthenticator::DB
 

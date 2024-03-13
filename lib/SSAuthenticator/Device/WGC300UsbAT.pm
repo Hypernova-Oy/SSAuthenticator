@@ -7,6 +7,7 @@ use SSAuthenticator::Device::WGC300UsbAT::Commands;
 use Device::SerialPort;
 use Time::HiRes;
 
+use SSAuthenticator::Pragmas;
 my $logger = bless({}, 'SSLog');
 
 our $reader; #We can have only one Reader, so far.

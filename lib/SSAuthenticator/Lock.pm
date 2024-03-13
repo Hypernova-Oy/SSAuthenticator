@@ -30,7 +30,7 @@ use GPIO::Relay::DoubleLatch;
 use GPIO::Relay::SingleLatch;
 
 use SSAuthenticator::Config;
-use SSLog;
+use SSAuthenticator::Pragmas;
 
 my $l = bless({}, 'SSLog');
 

@@ -10,7 +10,8 @@ use Modern::Perl;
 use Config::Simple;
 use Data::Dumper;
 use Try::Tiny;
-use SSLog;
+
+use SSAuthenticator::Pragmas;
 
 use SSAuthenticator::Exception::BadConfiguration;
 

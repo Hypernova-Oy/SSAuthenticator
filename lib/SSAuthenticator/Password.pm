@@ -3,6 +3,7 @@ package SSAuthenticator::Password;
 use Encode;
 use Crypt::Eksblowfish::Bcrypt;
 
+use SSAuthenticator::Pragmas;
 
 =head1 COPYRIGHT NOTICE
 
@@ -26,7 +27,7 @@ sub hash_password {
     $password = Encode::encode( 'UTF-8', $password )
       if Encode::is_utf8($password);
 
-    $settings = '$2a$08$'.Crypt::Eksblowfish::Bcrypt::en_base64(generate_salt($cardnumber));
+    my $settings = '$2a$08$'.Crypt::Eksblowfish::Bcrypt::en_base64(generate_salt($cardnumber));
     return Crypt::Eksblowfish::Bcrypt::bcrypt($password, $settings);
 }
 

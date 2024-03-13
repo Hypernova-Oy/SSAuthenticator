@@ -11,7 +11,7 @@ use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. 
 use File::Basename;
 use File::Slurp;
 
-use SSLog;
+use SSAuthenticator::Pragmas;
 use SSAuthenticator::Config;
 
 =head1 SSAuthenticator::Mailbox

@@ -5,10 +5,9 @@
 
 package SSAuthenticator::Greetings;
 
-use Modern::Perl;
-
 use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
+use SSAuthenticator::Pragmas;
 
 =head1 SSAuthenticator::Greetings
 

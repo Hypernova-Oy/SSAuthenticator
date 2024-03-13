@@ -8,6 +8,7 @@ use Modern::Perl;
 
 use Scalar::Util qw(blessed);
 
+use SSAuthenticator::Pragmas;
 use SSAuthenticator::Config;
 
 use SSLog;

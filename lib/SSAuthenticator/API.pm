@@ -18,7 +18,7 @@ use JSON::XS;
 use Scalar::Util qw(blessed);
 
 use SSAuthenticator::Config;
-use SSLog;
+use SSAuthenticator::Pragmas;
 
 my $l = bless({}, 'SSLog');
 my $lScraper = bless({category => 'scraper'}, 'SSLog');

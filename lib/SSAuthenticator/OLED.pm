@@ -15,7 +15,6 @@ use SSAuthenticator::Config;
 use SSAuthenticator::I18n qw($i18nMsg);
 use SSAuthenticator::Greetings;
 use SSAuthenticator::SharedState;
-
 my $l = bless({}, 'SSLog');
 
 my $display = OLED::Client->new();

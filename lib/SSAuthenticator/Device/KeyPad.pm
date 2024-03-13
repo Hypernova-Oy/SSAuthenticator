@@ -5,6 +5,8 @@ use SSAuthenticator::Pragmas;
 use Device::SerialPort;
 use Time::HiRes;
 
+use SSAuthenticator::Pragmas;
+
 use SSAuthenticator::Exception::KeyPad::WaitTimeout;
 
 use Exporter qw(import);
