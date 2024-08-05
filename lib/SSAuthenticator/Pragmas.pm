@@ -26,8 +26,8 @@ sub import {
   my %args = map {$_ => 1} @_;
 
   #Pragmas
+  utf8->import::into($target);
   Modern::Perl->import::into($target, '2018');
-  utf8->import::into($target); #This file and all Strings within are utf8-encoded
   Carp::Always->import::into($target);
   English->import::into($target);
   Try::Tiny->import::into($target);

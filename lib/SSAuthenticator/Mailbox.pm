@@ -6,7 +6,7 @@ package SSAuthenticator::Mailbox;
 
 use Modern::Perl;
 
-use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
+use Locale::TextDomain::UTF8 qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
 use File::Basename;
 use File::Slurp;

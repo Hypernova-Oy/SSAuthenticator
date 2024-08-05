@@ -5,7 +5,7 @@
 
 package SSAuthenticator::Greetings;
 
-use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
+use Locale::TextDomain::UTF8 qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
 use SSAuthenticator::Pragmas;
 

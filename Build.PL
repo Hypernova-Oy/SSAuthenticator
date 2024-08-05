@@ -24,6 +24,7 @@ my $build = Module::Build->new(
         'HTTP::Request::Common' => undef,
         'JSON::XS'           => undef,
         'Locale::TextDomain' => 1.30, # Later versions don't work
+        'Locale::TextDomain::UTF8' => 0.20,
         'Log::Log4perl'      => undef,
         'LWP::UserAgent'     => undef,
         'Modern::Perl'       => undef,

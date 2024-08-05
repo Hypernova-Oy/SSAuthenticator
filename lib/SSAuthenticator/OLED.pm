@@ -6,7 +6,7 @@ package SSAuthenticator::OLED;
 
 use SSAuthenticator::Pragmas;
 
-use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
+use Locale::TextDomain::UTF8 qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 
 use OLED::Client;
 use POSIX;
@@ -14,6 +14,7 @@ use POSIX;
 use SSAuthenticator::Config;
 use SSAuthenticator::I18n qw($i18nMsg);
 use SSAuthenticator::Greetings;
+use SSAuthenticator::Util;
 use SSAuthenticator::SharedState;
 my $l = bless({}, 'SSLog');
 
@@ -206,6 +207,7 @@ sub showOLEDMsg {
         $rows = 4 if $rows > 4;
 
         for (my $i=0 ; $i<$rows ; $i++) {
+            #$l->info("showOLEDMsg():> $i: ".$msgs->[$i].SSAuthenticator::Util::as_hex($msgs->[$i])) if $l->is_info;
             $l->info("showOLEDMsg():> $i: ".$msgs->[$i]) if $l->is_info;
             my $rv = $display->printRow($i, $msgs->[$i]);
             $err = 1 unless ($rv =~ /^200/);

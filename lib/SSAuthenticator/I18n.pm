@@ -6,7 +6,7 @@ package SSAuthenticator::I18n;
 
 use Modern::Perl;
 
-use Locale::TextDomain qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
+use Locale::TextDomain::UTF8 qw (SSAuthenticator); #Look from cwd or system defaults. This is needed for tests to pass during build
 use POSIX qw(LC_MESSAGES LC_ALL);
 
 use SSAuthenticator::Pragmas;
